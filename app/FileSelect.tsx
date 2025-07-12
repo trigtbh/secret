@@ -65,7 +65,11 @@ export default function FileSelect() {
 
     // Remove the global var declarations and create displayedFiles from state
     const displayedFiles = fileData.map((file, index) => (
-        <View key={index} className={`flex-row items-start px-4 py-3 ${index < fileData.length - 1 ? 'border-b border-border' : ''}`}>
+        <Animated.View 
+            key={index} 
+            entering={FadeInRight.delay(index * 50)}
+            className={`flex-row items-start px-4 py-3 ${index < fileData.length - 1 ? 'border-b border-border' : ''}`}
+        >
             <View className="mr-3 mt-0.5">
                 {getSourceIcon(file.type)}
             </View>
@@ -86,7 +90,7 @@ export default function FileSelect() {
             >
                 <Ionicons name="close" size={16} color={isDarkColorScheme ? "#9ca3af" : "#6b7280"} />
             </Pressable>
-        </View>
+        </Animated.View>
     ));
     
     const handleFileSelect = async () => {
@@ -139,9 +143,9 @@ export default function FileSelect() {
 
     return (
         <View className="flex-1 justify-between">        <View className="flex-1 px-6" >
-            <ScrollView className="max-h-60 rounded-lg border border-border" showsVerticalScrollIndicator={true}>
+            <ScrollView className="max-h-60 rounded-lg border border-border flex-1" showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }}>
                 {!hasFiles && (
-                    <View className="flex-1 justify-center items-center" style={{minHeight: 200}}>
+                    <View className="flex-1 justify-center items-center">
                         <Text className="text-base italic text-center" style={{opacity: 0.5}}>
                             Use the buttons below to add files.
                         </Text>

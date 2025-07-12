@@ -49,7 +49,7 @@ console.warn = (...args) => {
 
 const AIcon = Animated.createAnimatedComponent(Ionicon);
 
-const STEPS = 2;
+const STEPS = 4;
 const rotationOffset = 180;
 
 export default function Screen() {
@@ -182,10 +182,13 @@ export default function Screen() {
             case 0:
                 return <FileSelect />;
             // case 1:
-            //     return <StepOnePage />;
+            //     return <Options />;
             // case 2:
-            //     return <StepTwoPage />;
-            // ... etc
+            //     return <Confirm />;
+            // case 3:
+            //     return <Upload />;
+
+
             default:
                 return <FileSelect />;
         }

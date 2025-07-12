@@ -13,6 +13,8 @@
     "postinstall": "npx tailwindcss -i ./global.css -o ./node_modules/.cache/nativewind/global.css"
   },
   "dependencies": {
+    "@react-native-documents/picker": "^10.1.5",
+    "@react-native-documents/viewer": "^1.0.1",
     "@react-native-vector-icons/evil-icons": "^12.0.1",
     "@react-native-vector-icons/fontawesome6": "^12.0.1",
     "@react-navigation/native": "^7.0.0",

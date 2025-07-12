@@ -6,7 +6,7 @@ import {
     CardHeader,
     CardTitle
 }  from '~/components/ui/card';
-import {Pressable, View} from 'react-native';
+import {Pressable, View, Platform} from 'react-native';
 import Animated, {
     FadeInUp,
     FadeOutDown,
@@ -20,15 +20,39 @@ import Animated, {
     withTiming
 } from 'react-native-reanimated';
 
+
 import { Separator } from '~/components/ui/separator';
 import * as React from 'react';
 import {Text} from '~/components/ui/text';
 import { Ionicons } from '@expo/vector-icons';
+import {useColorScheme} from '~/lib/useColorScheme';
 
 export default function FileSelect() {
+    const { isDarkColorScheme } = useColorScheme();
     
-    const data = [];
-    
+    const handleFileSelect = () => {
+        if (Platform.OS === 'web') {
+            // Create a hidden file input element
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.multiple = true; // Allow multiple files
+            input.accept = '*/*'; // Accept all file types
+            
+            input.onchange = (event) => {
+                const files = event.target.files;
+                if (files) {
+                    Array.from(files).forEach((file: File) => {
+                        console.log('Selected file:', file.name, file.size, file.type);
+                    });
+                }
+            };
+            
+            input.click(); // Trigger file dialog
+        } else {
+           console.log("File selection is not supported on this platform.");
+        }
+    };
+
     return (
         <View className="flex-1 justify-between">
             <View>
@@ -47,8 +71,9 @@ export default function FileSelect() {
                 <View className="flex-row rounded-xl overflow-hidden border border-border">
                     <Pressable 
                         className="flex-1 bg-card active:bg-muted p-3 items-center justify-center"
-                        onPress={() => console.log('Files pressed')}>
-                        <Ionicons name="folder" size={24} color="#666" />
+                        onPress={handleFileSelect}
+                        >
+                        <Ionicons name="folder" size={24} color={isDarkColorScheme ? "#e5e7eb" : "#374151"} />
                         <Text className="text-sm text-center text-foreground mt-1">Files</Text>
                     </Pressable>
 
@@ -57,7 +82,7 @@ export default function FileSelect() {
                     <Pressable 
                         className="flex-1 bg-card active:bg-muted p-3 items-center justify-center"
                         onPress={() => console.log('Links pressed')}>
-                        <Ionicons name="link" size={24} color="#666" />
+                        <Ionicons name="link" size={24} color={isDarkColorScheme ? "#e5e7eb" : "#374151"} />
                         <Text className="text-sm text-center text-foreground mt-1">Links</Text>
                     </Pressable>
 
@@ -66,7 +91,7 @@ export default function FileSelect() {
                     <Pressable 
                         className="flex-1 bg-card active:bg-muted p-3 items-center justify-center"
                         onPress={() => console.log('Text pressed')}>
-                        <Ionicons name="document-text" size={24} color="#666" />
+                        <Ionicons name="document-text" size={24} color={isDarkColorScheme ? "#e5e7eb" : "#374151"} />
                         <Text className="text-sm text-center text-foreground mt-1">Text</Text>
                     </Pressable>
                 </View>

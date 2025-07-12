@@ -138,17 +138,17 @@ export default function FileSelect() {
     };
 
     return (
-        <View className="flex-1 justify-between">
-            <View className="flex-1 px-6" >
+        <View className="flex-1 justify-between">        <View className="flex-1 px-6" >
+            <ScrollView className="max-h-60 rounded-lg border border-border" showsVerticalScrollIndicator={true}>
                 {!hasFiles && (
-                    <Text className="text-base px-6 italic text-center mb-6" style={{opacity: 0.5}}>
-                        Use the buttons below to add files.
-                    </Text>
+                    <View className="flex-1 justify-center items-center" style={{minHeight: 200}}>
+                        <Text className="text-base italic text-center" style={{opacity: 0.5}}>
+                            Use the buttons below to add files.
+                        </Text>
+                    </View>
                 )}
-
-                <ScrollView className="max-h-60 rounded-lg border-border" style={{borderWidth: (hasFiles ? 1 : 0)}} showsVerticalScrollIndicator={true}>
-                    {displayedFiles}
-                </ScrollView>
+                {displayedFiles}
+            </ScrollView>
 
                 {/* Your main content here - file list, etc. */}
                 <View className="mx-6 mb-6">

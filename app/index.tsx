@@ -192,11 +192,11 @@ export default function Screen() {
     };
 
     return (
-        <SafeAreaView className="flex-1 justify-center items-center gap-5 bg-secondary/30"> {/* <Text className="text-4xl font-bold border-1 border-red-50">Hello world!</Text> */}
-            <Animated.View entering={FadeInUp}
-                exiting={FadeOutDown}
-                className="w-full max-w-sm">
-                <Card className="w-full max-w-sm rounded-2xl">
+        <SafeAreaView className="flex-1 justify-center items-center gap-5 bg-background">
+        <Animated.View entering={FadeInUp.damping(50).stiffness(60)}
+            exiting={FadeOutDown}
+            className="w-full max-w-sm">
+            <Card className="w-full max-w-sm rounded-2xl">
                     <CardHeader className="pb-3.5 flex-row justify-between items-center">
                         <CardTitle className="text-4xl">New Secret</CardTitle>
                         <Image 

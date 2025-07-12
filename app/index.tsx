@@ -249,9 +249,7 @@ export default function Screen() {
                                 [rightButton, {height: 48}]
                         }>
                             <Pressable className="justify-center items-center"
-                                style={
-                                    [button, rightButton, {height: 48}]
-                                }
+                                style={[button, rightButton, {height: 48}]}
                                 onPress={increment}
                                 onHoverIn={() => {
                                     rightScale.value = withSpring(1.1, {damping: 15, stiffness: 120});
@@ -265,18 +263,12 @@ export default function Screen() {
                                 onPressOut={() => {
                                     rightScale.value = withSpring(1.1, {damping: 10, stiffness: 120});
                                 }}>
-                                
-                                    <Animated.View style={arrowStyle}>
-                                        <Ionicon name="arrow-forward"
-                                            size={24}
-                                            color="white"/>
-                                    </Animated.View>
-                                    <Animated.View style={checkStyle}>
-                                        <Ionicon name="checkmark"
-                                            size={24}
-                                            color="black"/>
-                                    </Animated.View>
-                                
+                                <Animated.View style={arrowStyle}>
+                                    <Ionicon name="arrow-forward" size={24} color="white"/>
+                                </Animated.View>
+                                <Animated.View style={checkStyle}>
+                                    <Ionicon name="checkmark" size={24} color="black"/>
+                                </Animated.View>
                             </Pressable>
                         </Animated.View>
                     </View>

@@ -27,10 +27,36 @@ import {Text} from '~/components/ui/text';
 import { Ionicons } from '@expo/vector-icons';
 import {useColorScheme} from '~/lib/useColorScheme';
 
+type Content = {
+    name: string,
+    type: string,
+    buffer: Uint8Array,
+    length: number
+}
+
+
+var bytes = 0;
+var data:  Content[] = [];
+
+
+function smallFileSize(size: number): string {
+    if (size < 1024) return size + ' B';
+    else if (size < 1024 * 1024) return (size / 1024).toFixed(1) + ' KB';
+    else return (size / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
 export default function FileSelect() {
     const { isDarkColorScheme } = useColorScheme();
+    const [hasFiles, setHasFiles] = React.useState(false);
+
+    var displayedFiles = data.map((file, index) => (
+        <View key={index} className="flex-row items-center justify-between px-4 py-2 border-b border-border">
+            <Text className="text-sm text-foreground">{file.name}</Text>
+            <Text className="text-xs text-muted-foreground">{(file.length / 1024).toFixed(1)} KB</Text>
+        </View>
+    ));
     
-    const handleFileSelect = () => {
+    const handleFileSelect = async () => {
         if (Platform.OS === 'web') {
             // Create a hidden file input element
             const input = document.createElement('input');
@@ -38,31 +64,77 @@ export default function FileSelect() {
             input.multiple = true; // Allow multiple files
             input.accept = '*/*'; // Accept all file types
             
-            input.onchange = (event) => {
-                const files = event.target.files;
-                if (files) {
-                    Array.from(files).forEach((file: File) => {
+            input.onchange = async (event: Event) => {
+                const target = event.target as HTMLInputElement;
+                const files = target.files;
+                if (files && files.length > 0) {
+                    // Convert FileList to Array and iterate
+                    for (const file of Array.from(files)) {
+                        const arrayBuffer = await file.arrayBuffer(); // binary data
+                        const byteArray = new Uint8Array(arrayBuffer);
+                        data.push({
+                            name: file.name,
+                            type: "file",
+                            buffer: byteArray,
+                            length: file.size
+                        });
+
                         console.log('Selected file:', file.name, file.size, file.type);
-                    });
+                        bytes += file.size;
+
+                        if (bytes > (1024 * 1024)) {
+                            alert("Please keep data uploads below 1MB.");
+                            var last: Content | undefined = data.pop();
+                            if (last) {
+                                bytes -= last.length;
+                            }
+                        }
+                    }
+                    
+                    displayedFiles = data.map((file, index) => (
+                        <View key={index} className="flex-row items-center justify-between px-4 py-2 border-b border-border">
+                            
+                            
+                            
+                            
+                            <Text className="text-sm text-foreground">{file.name}</Text>
+                            <Text className="text-xs text-muted-foreground">{smallFileSize(file.length)}</Text>
+                        </View>
+                    ));
+
+                    console.log(displayedFiles)
+                    
+                    // Update state to hide the text
+                    setHasFiles(data.length > 0);
+
+                    
                 }
             };
             
             input.click(); // Trigger file dialog
         } else {
-           console.log("File selection is not supported on this platform.");
+            console.log("File selection is not supported on this platform.");
         }
     };
 
     return (
         <View className="flex-1 justify-between">
             <View>
-                <Text className="text-base px-6 italic text-center mb-6" style={{opacity: 0.5}}>
-                    Use the buttons below to add files.
-                </Text>
+                {!hasFiles && (
+                    <Text className="text-base px-6 italic text-center mb-6" style={{opacity: 0.5}}>
+                        Use the buttons below to add files.
+                    </Text>
+                )}
+
+                {displayedFiles}
 
                 {/* Your main content here - file list, etc. */}
                 <View className="mx-6 mb-6">
-                    {/* Add your file selection content here */}
+                    {hasFiles && (
+                        <Text className="text-center text-foreground">
+                            {data.length} file{data.length !== 1 ? 's' : ''} selected
+                        </Text>
+                    )}
                 </View>
             </View>
 

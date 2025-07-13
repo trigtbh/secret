@@ -41,10 +41,14 @@ export let globalFileData: {
     files: Content[];
     totalBytes: number;
     hasFiles: boolean;
+    password: string;
+    expiration: number;
 } = {
     files: [],
     totalBytes: 0,
-    hasFiles: false
+    hasFiles: false,
+    password: '',
+    expiration: 60 * 60 // Default to 1 hour
 };
 
 
@@ -108,7 +112,9 @@ export default function FileSelect() {
             globalFileData = {
                 files: fileData,
                 totalBytes,
-                hasFiles
+                hasFiles,
+                password: globalFileData.password,
+                expiration: globalFileData.expiration
             };
             console.log('Saved file data:', globalFileData.files.length, 'files');
         } catch (error) {
@@ -134,7 +140,9 @@ export default function FileSelect() {
             globalFileData = {
                 files: [],
                 totalBytes: 0,
-                hasFiles: false
+                hasFiles: false,
+                password: '',
+                expiration: 60 * 60
             };
             setFileData([]);
             setTotalBytes(0);
@@ -360,16 +368,17 @@ export default function FileSelect() {
         height: windowHeight.value,
     }));
 
+    const WrapperComponent = Platform.OS === 'web' ? View : Pressable;
+    const wrapperProps = Platform.OS === 'web' 
+        ? { className: "flex-1 justify-between", style: { userSelect: 'none' } }
+        : { 
+            className: "flex-1 justify-between", 
+            style: { userSelect: 'none' },
+            onPress: () => Keyboard.dismiss()
+          };
+
     return (
-        <Pressable 
-            className="flex-1 justify-between" 
-            style={{ userSelect: 'none' }}
-            onPress={() => {
-                if (Platform.OS !== 'web') {
-                    Keyboard.dismiss();
-                }
-            }}
-        >
+        <WrapperComponent {...wrapperProps}>
             <View className="px-6 pb-3">
                 <Text className="text-lg font-semibold text-foreground">Step 1: Add Content</Text>
                 <Text className="text-sm text-muted-foreground mt-1">Select components to add to your secret.</Text>
@@ -496,6 +505,6 @@ export default function FileSelect() {
                     </Pressable>
                 </View>
             </Animated.View>
-        </Pressable>
+        </WrapperComponent>
     )
 }

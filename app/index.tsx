@@ -295,7 +295,7 @@ export default function Screen() {
     };
 
     return (
-        <SafeAreaView className="flex-1 justify-center items-center gap-5 bg-background" style={{userSelect: 'none'}}>
+        <SafeAreaView className="flex-1 justify-center items-center gap-5 bg-background" >
         <Animated.View entering={FadeInUp.damping(50).stiffness(60)}
             exiting={FadeOutDown}
             className="w-full max-w-sm mx-4">
@@ -310,7 +310,7 @@ export default function Screen() {
                     </CardHeader>
                     
                     <Animated.View 
-                        style={cardContentStyle}
+                        style={[cardContentStyle]}
                         className="min-h-[350px] sm:min-h-[300px]">
                         {renderCardContent()}
                     </Animated.View>

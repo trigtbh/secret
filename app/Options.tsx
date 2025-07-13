@@ -9,6 +9,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu';
+import { globalFileData } from '~/app/FileSelect';
 
 export default function Options() {
     const { isDarkColorScheme } = useColorScheme();
@@ -16,6 +17,24 @@ export default function Options() {
     const [isPasswordFocused, setIsPasswordFocused] = React.useState(false);
     const [isPasswordHovered, setIsPasswordHovered] = React.useState(false);
     const [expiration, setExpiration] = React.useState<number>(60 * 60);
+
+    // Load global state on mount
+    React.useEffect(() => {
+        setPassword(globalFileData.password);
+        setExpiration(globalFileData.expiration);
+    }, []);
+
+    // Save password changes to global state
+    const handlePasswordChange = (newPassword: string) => {
+        setPassword(newPassword);
+        globalFileData.password = newPassword;
+    };
+
+    // Save expiration changes to global state
+    const handleExpirationChange = (newExpiration: number) => {
+        setExpiration(newExpiration);
+        globalFileData.expiration = newExpiration;
+    };
 
     const expirationOptions = [
         { label: '1 hour', value: 60*60 },
@@ -40,52 +59,54 @@ export default function Options() {
                 <Text className="text-sm text-muted-foreground mt-1">Set a password and sharing options.</Text>
             </View>
             
-            <View className="flex-1 px-6 gap-6" style={{ overflow: 'visible' }}>
-                {/* Password Field */}
-                <View>
-                    <Text className="text-sm text-muted-foreground mb-2">Password</Text>
-                    <TextInput
-                        className="border border-border rounded-lg p-3 text-foreground bg-card"
-                        placeholder="Enter password..."
-                        placeholderTextColor={isDarkColorScheme ? "#6b7280" : "#9ca3af"}
-                        value={password}
-                        onChangeText={setPassword}
-                        onFocus={() => setIsPasswordFocused(true)}
-                        onBlur={() => setIsPasswordFocused(false)}
-                        onPointerEnter={() => setIsPasswordHovered(true)}
-                        onPointerLeave={() => setIsPasswordHovered(false)}
-                        secureTextEntry={!isPasswordFocused && !isPasswordHovered}
-                        style={{ fontSize: 16 }}
-                    />
-                </View>
+            <View className="flex-1 px-6">
+                <View className="rounded-lg border border-border overflow-hidden bg-card p-4 gap-4" style={{ overflow: 'visible' }}>
+                    {/* Password Field */}
+                    <View>
+                        <Text className="text-sm text-muted-foreground mb-2">Password</Text>
+                        <TextInput
+                            className="border border-border rounded-lg p-3 text-foreground bg-white dark:bg-white"
+                            placeholder="Enter password..."
+                            placeholderTextColor={isDarkColorScheme ? "#6b7280" : "#9ca3af"}
+                            value={password}
+                            onChangeText={handlePasswordChange}
+                            onFocus={() => setIsPasswordFocused(true)}
+                            onBlur={() => setIsPasswordFocused(false)}
+                            onPointerEnter={() => setIsPasswordHovered(true)}
+                            onPointerLeave={() => setIsPasswordHovered(false)}
+                            secureTextEntry={!isPasswordFocused && !isPasswordHovered}
+                            style={{ fontSize: 16, color: '#000000' }}
+                        />
+                    </View>
 
-                {/* Expiration Dropdown */}
-                <View>
-                    <Text className="text-sm text-muted-foreground mb-2">Expiration Time</Text>
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Pressable className="border border-border rounded-lg p-3 bg-card flex-row items-center justify-between">
-                                <Text className="text-foreground" style={{ fontSize: 16 }}>
-                                    {selectedOption?.label || 'Select expiration time'}
-                                </Text>
-                                <Ionicons 
-                                    name="chevron-down" 
-                                    size={20} 
-                                    color={isDarkColorScheme ? "#9ca3af" : "#6b7280"} 
-                                />
-                            </Pressable>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-56">
-                            {expirationOptions.map((option) => (
-                                <DropdownMenuItem
-                                    key={option.value}
-                                    onPress={() => setExpiration(option.value)}
-                                >
-                                    <Text>{option.label}</Text>
-                                </DropdownMenuItem>
-                            ))}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                    {/* Expiration Dropdown */}
+                    <View>
+                        <Text className="text-sm text-muted-foreground mb-2">Expiration Time</Text>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Pressable className="border border-border rounded-lg p-3 bg-white dark:bg-white flex-row items-center justify-between">
+                                    <Text style={{ fontSize: 16, color: '#000000' }}>
+                                        {selectedOption?.label || 'Select expiration time'}
+                                    </Text>
+                                    <Ionicons 
+                                        name="chevron-down" 
+                                        size={20} 
+                                        color={isDarkColorScheme ? "#9ca3af" : "#6b7280"} 
+                                    />
+                                </Pressable>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="w-56">
+                                {expirationOptions.map((option) => (
+                                    <DropdownMenuItem
+                                        key={option.value}
+                                        onPress={() => handleExpirationChange(option.value)}
+                                    >
+                                        <Text>{option.label}</Text>
+                                    </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </View>
                 </View>
             </View>
         </Pressable>

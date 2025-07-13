@@ -76,7 +76,7 @@ export default function Options() {
                     <View>
                         <Text className="text-sm text-muted-foreground mb-2">Password</Text>
                         <TextInput
-                            className="border border-border rounded-lg p-3 text-foreground bg-white dark:bg-white"
+                            className="border border-border rounded-lg p-3 text-foreground bg-card"
                             placeholder="Enter password..."
                             placeholderTextColor={isDarkColorScheme ? "#6b7280" : "#9ca3af"}
                             value={password}
@@ -86,7 +86,7 @@ export default function Options() {
                             onPointerEnter={() => setIsPasswordHovered(true)}
                             onPointerLeave={() => setIsPasswordHovered(false)}
                             secureTextEntry={!isPasswordFocused && !isPasswordHovered}
-                            style={{ fontSize: 16, color: '#000000' }}
+                            style={{ fontSize: 16 }}
                         />
                     </View>
 
@@ -95,8 +95,8 @@ export default function Options() {
                         <Text className="text-sm text-muted-foreground mb-2">Expiration Time</Text>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Pressable className="border border-border rounded-lg p-3 bg-white dark:bg-white flex-row items-center justify-between">
-                                    <Text style={{ fontSize: 16, color: '#000000' }}>
+                                <Pressable className="border border-border rounded-lg p-3 bg-card flex-row items-center justify-between">
+                                    <Text className="text-foreground" style={{ fontSize: 16 }}>
                                         {selectedOption?.label || 'Select expiration time'}
                                     </Text>
                                     <Ionicons 
@@ -123,13 +123,13 @@ export default function Options() {
                     <View>
                         <Text className="text-sm text-muted-foreground mb-2">View Limit (Optional)</Text>
                         <TextInput
-                            className="border border-border rounded-lg p-3 text-foreground bg-white dark:bg-white"
+                            className="border border-border rounded-lg p-3 text-foreground bg-card"
                             placeholder="Enter view limit..."
                             placeholderTextColor={isDarkColorScheme ? "#6b7280" : "#9ca3af"}
                             value={viewLimit}
                             onChangeText={handleViewLimitChange}
                             keyboardType="numeric"
-                            style={{ fontSize: 16, color: '#000000' }}
+                            style={{ fontSize: 16 }}
                         />
                         <Text className="text-xs text-muted-foreground mt-1">
                             Maximum number of times this secret can be viewed. Leave empty for unlimited.

@@ -268,7 +268,7 @@ export default function Screen() {
     };
 
     return (
-        <SafeAreaView className="flex-1 justify-center items-center gap-5 bg-background">
+        <SafeAreaView className="flex-1 justify-center items-center gap-5 bg-background" style={{userSelect: 'none'}}>
         <Animated.View entering={FadeInUp.damping(50).stiffness(60)}
             exiting={FadeOutDown}
             className="w-full max-w-sm">

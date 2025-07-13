@@ -163,7 +163,7 @@ export default function FileSelect() {
                 <Text className="text-xs text-muted-foreground mt-1">{smallFileSize(file.length)}</Text>
             </View>
             <Pressable 
-                className="ml-2 p-1 active:bg-muted rounded"
+                className="ml-2 p-1 active:bg-muted rounded hover:bg-muted/60"
                 onPress={() => {
                     const newFileData = fileData.filter((_, i) => i !== index);
                     const newTotalBytes = totalBytes - file.length;
@@ -234,7 +234,12 @@ export default function FileSelect() {
     };
 
     return (
-        <View className="flex-1 justify-between">
+        <View className="flex-1 justify-between" style={{ userSelect: 'none' }}>
+            <View className="px-6 pb-3">
+                <Text className="text-lg font-semibold text-foreground">Step 1: Add Content</Text>
+                <Text className="text-sm text-muted-foreground mt-1">Select components to add to your secret.</Text>
+            </View>
+            
             <View className="flex-1 px-6">
                 <ScrollView className="max-h-48 rounded-lg border border-border flex-1" showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }}>
                     {!hasFiles && (
@@ -249,10 +254,10 @@ export default function FileSelect() {
             </View>
 
             {/* 3-button section - positioned at bottom */}
-            <View className="px-4 pb-4">
+            <View className="px-4 pb-4 pt-6">
                 <View className="flex-row rounded-xl overflow-hidden border border-border">
                     <Pressable 
-                        className="flex-1 bg-card active:bg-muted p-3 items-center justify-center"
+                        className="flex-1 bg-card active:bg-muted hover:bg-muted/50 p-3 items-center justify-center"
                         onPress={handleFileSelect}
                         >
                         <Ionicons name="folder" size={24} color={isDarkColorScheme ? "#e5e7eb" : "#374151"} />
@@ -262,7 +267,7 @@ export default function FileSelect() {
                     <View className="w-px bg-border" />
 
                     <Pressable 
-                        className="flex-1 bg-card active:bg-muted p-3 items-center justify-center"
+                        className="flex-1 bg-card active:bg-muted hover:bg-muted/50 p-3 items-center justify-center"
                         onPress={() => console.log('Links pressed')}>
                         <Ionicons name="link" size={24} color={isDarkColorScheme ? "#e5e7eb" : "#374151"} />
                         <Text className="text-sm text-center text-foreground mt-1">Links</Text>
@@ -271,7 +276,7 @@ export default function FileSelect() {
                     <View className="w-px bg-border" />
 
                     <Pressable 
-                        className="flex-1 bg-card active:bg-muted p-3 items-center justify-center"
+                        className="flex-1 bg-card active:bg-muted hover:bg-muted/50 p-3 items-center justify-center"
                         onPress={() => console.log('Text pressed')}>
                         <Ionicons name="document-text" size={24} color={isDarkColorScheme ? "#e5e7eb" : "#374151"} />
                         <Text className="text-sm text-center text-foreground mt-1">Text</Text>

@@ -70,6 +70,10 @@ export default function Screen() {
     const leftScale = useSharedValue(1);
     const rightScale = useSharedValue(1);
     
+    // Card content animation values
+    const cardOpacity = useSharedValue(0); // Start at 0 for initial animation
+    const cardTranslateX = useSharedValue(20); // Start slightly right
+    
     const arrowStyle = useAnimatedStyle(() => {
         return {
             transform: [
@@ -93,66 +97,104 @@ export default function Screen() {
         };
     });
 
+    // Card content animation style
+    const cardContentStyle = useAnimatedStyle(() => {
+        return {
+            opacity: cardOpacity.value,
+            transform: [
+                { translateX: cardTranslateX.value }
+            ]
+        };
+    });
+
+    // Initial animation on mount
+    React.useEffect(() => {
+        cardOpacity.value = withTiming(1, { duration: 300 });
+        cardTranslateX.value = withTiming(0, { duration: 300 });
+    }, []);
+
     function decrement() {
         if (step > 0) {
-            const newStep = step - 1;
-            setStep(newStep);
+            // Animate card out
+            cardOpacity.value = withTiming(0, { duration: 150 });
+            cardTranslateX.value = withTiming(20, { duration: 150 });
             
-            // Handle left button opacity
-            if (newStep === 0) {
-                leftOpacity.value = withSpring(0.3);
-                leftColor.value = withTiming(isDarkColorScheme ? "#1f2937" : "#4b5563");
-            }
-            
-            // Handle right button when going from final step back to previous
-            if (step === STEPS - 1) {
-                // Coming from final step (green) back to normal
-                rotation.value = withSpring(0, {
-                    damping: 25,
-                    stiffness: 120
-                }, () => {
-                    rotation.value = 0;
-                });
-                arrowOpacity.value = withTiming(1, {duration: 300});
-                checkOpacity.value = withTiming(0, {duration: 300});
-                rightWidth.value = withSpring(48, {
-                    damping: 25,
-                    stiffness: 120
-                });
-                rightBorder.value = withTiming(isDarkColorScheme ? "#4b5563" : "#d1d5db");
-                rightColor.value = withTiming(isDarkColorScheme ? "#1f2937" : "#4b5563");
-            }
+            setTimeout(() => {
+                const newStep = step - 1;
+                setStep(newStep);
+                
+                // Animate card back in
+                cardTranslateX.value = -20;
+                cardOpacity.value = withTiming(1, { duration: 150 });
+                cardTranslateX.value = withTiming(0, { duration: 150 });
+                
+                // Handle left button opacity
+                if (newStep === 0) {
+                    leftOpacity.value = withSpring(0.3);
+                    leftColor.value = withTiming(isDarkColorScheme ? "#1f2937" : "#4b5563");
+                }
+                
+                // Handle right button when going from final step back to previous
+                if (step === STEPS - 1) {
+                    // Coming from final step (green) back to normal
+                    rotation.value = withSpring(0, {
+                        damping: 25,
+                        stiffness: 120
+                    }, () => {
+                        rotation.value = 0;
+                    });
+                    arrowOpacity.value = withTiming(1, {duration: 300});
+                    checkOpacity.value = withTiming(0, {duration: 300});
+                    rightWidth.value = withSpring(48, {
+                        damping: 25,
+                        stiffness: 120
+                    });
+                    rightBorder.value = withTiming(isDarkColorScheme ? "#4b5563" : "#d1d5db");
+                    rightColor.value = withTiming(isDarkColorScheme ? "#1f2937" : "#4b5563");
+                }
+            }, 150);
         }
     }
     function increment() {
         if (step < STEPS - 1) {
-            const newStep = step + 1;
-            setStep(newStep);
+            // Animate card out
+            cardOpacity.value = withTiming(0, { duration: 150 });
+            cardTranslateX.value = withTiming(-20, { duration: 150 });
             
-            // Handle left button when moving from step 0
-            if (step === 0) {
-                leftOpacity.value = withSpring(1);
-                leftColor.value = withTiming(isDarkColorScheme ? "#1f2937" : "#4b5563");
-            }
-            
-            // Handle right button when reaching final step
-            if (newStep === STEPS - 1) {
-                // Reached final step - turn green and show checkmark
-                rightColor.value = withTiming("#22c55e");
-                rotation.value = withSpring(125, {
-                    damping: 25,
-                    stiffness: 120
-                }, () => {
-                    rotation.value = 125;
-                });
-                arrowOpacity.value = withTiming(0, {duration: 300});
-                checkOpacity.value = withTiming(1, {duration: 300});
-                rightWidth.value = withSpring(120, {
-                    damping: 25,
-                    stiffness: 120
-                });
-                rightBorder.value = withTiming("#16a34a");
-            }
+            setTimeout(() => {
+                const newStep = step + 1;
+                setStep(newStep);
+                
+                // Animate card back in
+                cardTranslateX.value = 20;
+                cardOpacity.value = withTiming(1, { duration: 150 });
+                cardTranslateX.value = withTiming(0, { duration: 150 });
+                
+                // Handle left button when moving from step 0
+                if (step === 0) {
+                    leftOpacity.value = withSpring(1);
+                    leftColor.value = withTiming(isDarkColorScheme ? "#1f2937" : "#4b5563");
+                }
+                
+                // Handle right button when reaching final step
+                if (newStep === STEPS - 1) {
+                    // Reached final step - turn green and show checkmark
+                    rightColor.value = withTiming("#22c55e");
+                    rotation.value = withSpring(125, {
+                        damping: 25,
+                        stiffness: 120
+                    }, () => {
+                        rotation.value = 125;
+                    });
+                    arrowOpacity.value = withTiming(0, {duration: 300});
+                    checkOpacity.value = withTiming(1, {duration: 300});
+                    rightWidth.value = withSpring(120, {
+                        damping: 25,
+                        stiffness: 120
+                    });
+                    rightBorder.value = withTiming("#16a34a");
+                }
+            }, 150);
         }
     }
 
@@ -181,14 +223,12 @@ export default function Screen() {
         switch(step) {
             case 0:
                 return <FileSelect />;
-            // case 1:
-            //     return <Options />;
-            // case 2:
-            //     return <Confirm />;
-            // case 3:
-            //     return <Upload />;
-
-
+            case 1:
+                return <View className="flex-1 justify-center items-center"><Text className="text-foreground">Options Component</Text></View>;
+            case 2:
+                return <View className="flex-1 justify-center items-center"><Text className="text-foreground">Confirm Component</Text></View>;
+            case 3:
+                return <View className="flex-1 justify-center items-center"><Text className="text-foreground">Upload Component</Text></View>;
             default:
                 return <FileSelect />;
         }
@@ -210,9 +250,7 @@ export default function Screen() {
                     </CardHeader>
                     
                     <Animated.View 
-                        key={step}
-                        entering={FadeIn.delay(450)}
-                        exiting={FadeOut}
+                        style={cardContentStyle}
                         className="min-h-[300px]">
                         {renderCardContent()}
                     </Animated.View>

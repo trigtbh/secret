@@ -6,7 +6,7 @@ import {
     CardHeader,
     CardTitle
 }  from '~/components/ui/card';
-import {Pressable, View, Platform, ScrollView} from 'react-native';
+import {Pressable, View, Platform, ScrollView, TextInput} from 'react-native';
 import Animated, {
     FadeInUp,
     FadeOutDown,
@@ -59,6 +59,19 @@ export default function FileSelect() {
     const [hasFiles, setHasFiles] = React.useState(false);
     const [fileData, setFileData] = React.useState<Content[]>([]); // Add state for file data
     const [totalBytes, setTotalBytes] = React.useState(0); // Add state for bytes
+    
+    // Text/Link input states
+    const [showTextInput, setShowTextInput] = React.useState(false);
+    const [inputType, setInputType] = React.useState<'link' | 'text'>('text');
+    const [inputValue, setInputValue] = React.useState('');
+    const [inputTitle, setInputTitle] = React.useState('');
+
+    // Animation values
+    const fileContentOpacity = useSharedValue(1);
+    const buttonsOpacity = useSharedValue(1);
+    const buttonsHeight = useSharedValue(100); // Increased height for better visibility
+    const textInputOpacity = useSharedValue(0);
+    const windowHeight = useSharedValue(192); // Default height (max-h-48 = 192px)
 
     // Load data from global variable on component mount
     React.useEffect(() => {
@@ -195,7 +208,6 @@ export default function FileSelect() {
                     const newFiles: Content[] = [];
                     let newBytes = totalBytes;
                     let limitExceeded = false;
-                    let skippedDuplicates = 0;
                     
                     for (const file of Array.from(files)) {
                         // Check if file with same name already exists
@@ -203,7 +215,6 @@ export default function FileSelect() {
                         
                         if (isDuplicate) {
                             console.log('Skipping duplicate file:', file.name);
-                            skippedDuplicates++;
                             continue;
                         }
                         
@@ -243,6 +254,108 @@ export default function FileSelect() {
         }
     };
 
+    const handleTextLinkInput = (type: 'link' | 'text') => {
+        setInputType(type);
+        
+        // Animate transition: fade out files/buttons, collapse button container, expand window, fade in text input
+        fileContentOpacity.value = withTiming(0, { duration: 400 });
+        buttonsOpacity.value = withTiming(0, { duration: 400 });
+        buttonsHeight.value = withTiming(0, { duration: 400 });
+        
+        setTimeout(() => {
+            setShowTextInput(true);
+            windowHeight.value = withTiming(350, { duration: 400 }); // Slightly reduced height
+            textInputOpacity.value = withTiming(1, { duration: 400 });
+        }, 400);
+        
+        setInputValue('');
+        setInputTitle('');
+    };
+
+    const handleAddTextLink = () => {
+        if (!inputValue.trim() || !inputTitle.trim()) return;
+        
+        const content = inputValue.trim();
+        const title = inputTitle.trim();
+        const contentBytes = new TextEncoder().encode(content);
+        
+        // Check size limit
+        const newBytes = totalBytes + contentBytes.length;
+        if (newBytes > (1024 * 1024)) {
+            alert("Please keep data uploads below 1MB.");
+            return;
+        }
+        
+        // Check for duplicates
+        const isDuplicate = fileData.some(existingFile => existingFile.name === title);
+        if (isDuplicate) {
+            console.log('Skipping duplicate:', title);
+            return;
+        }
+        
+        const newContent: Content = {
+            name: title,
+            type: inputType,
+            buffer: contentBytes,
+            length: contentBytes.length
+        };
+        
+        setFileData(prevData => [...prevData, newContent]);
+        setTotalBytes(newBytes);
+        setHasFiles(true);
+        
+        // Animate back: fade out text input, shrink window, expand button container, fade in files/buttons
+        textInputOpacity.value = withTiming(0, { duration: 400 });
+        windowHeight.value = withTiming(192, { duration: 400 });
+        
+        setTimeout(() => {
+            setShowTextInput(false);
+            fileContentOpacity.value = withTiming(1, { duration: 400 });
+            buttonsOpacity.value = withTiming(1, { duration: 400 });
+            buttonsHeight.value = withTiming(100, { duration: 400 });
+        }, 400);
+        
+        setInputValue('');
+        setInputTitle('');
+        
+        console.log(`Added ${inputType}:`, title, contentBytes.length, 'bytes');
+    };
+
+    const handleCancelTextLink = () => {
+        // Animate back: fade out text input, shrink window, expand button container, fade in files/buttons
+        textInputOpacity.value = withTiming(0, { duration: 400 });
+        windowHeight.value = withTiming(192, { duration: 400 });
+        
+        setTimeout(() => {
+            setShowTextInput(false);
+            fileContentOpacity.value = withTiming(1, { duration: 400 });
+            buttonsOpacity.value = withTiming(1, { duration: 400 });
+            buttonsHeight.value = withTiming(100, { duration: 400 });
+        }, 400);
+        
+        setInputValue('');
+        setInputTitle('');
+    };
+
+    // Animated styles
+    const fileContentStyle = useAnimatedStyle(() => ({
+        opacity: fileContentOpacity.value,
+    }));
+
+    const buttonsStyle = useAnimatedStyle(() => ({
+        opacity: buttonsOpacity.value,
+        height: buttonsHeight.value,
+        overflow: 'hidden',
+    }));
+
+    const textInputStyle = useAnimatedStyle(() => ({
+        opacity: textInputOpacity.value,
+    }));
+
+    const windowStyle = useAnimatedStyle(() => ({
+        height: windowHeight.value,
+    }));
+
     return (
         <View className="flex-1 justify-between" style={{ userSelect: 'none' }}>
             <View className="px-6 pb-3">
@@ -251,24 +364,96 @@ export default function FileSelect() {
             </View>
             
             <View className="flex-1 px-6">
-                <ScrollView className="max-h-48 rounded-lg border border-border flex-1" showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }}>
-                    {!hasFiles && (
-                        <View className="flex-1 justify-center items-center">
-                            <Text className="text-base italic text-center" style={{opacity: 0.5}}>
-                                Use the buttons below to add files.
-                            </Text>
-                        </View>
+                <Animated.View 
+                    style={[windowStyle]} 
+                    className="rounded-lg border border-border overflow-hidden relative"
+                >
+                    {/* File content - always rendered but animated opacity */}
+                    <Animated.View style={[fileContentStyle]} className="absolute inset-0">
+                        <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }}>
+                            {!hasFiles && (
+                                <View className="flex-1 justify-center items-center">
+                                    <Text className="text-base italic text-center" style={{opacity: 0.5}}>
+                                        Use the buttons below to add files.
+                                    </Text>
+                                </View>
+                            )}
+                            {displayedFiles}
+                        </ScrollView>
+                    </Animated.View>
+
+                    {/* Text input content - always rendered but animated opacity */}
+                    {showTextInput && (
+                        <Animated.View style={[textInputStyle]} className="absolute inset-0 p-4 justify-between">
+                            <View>
+                                <Text className="text-lg font-semibold text-foreground mb-4">
+                                    Add {inputType === 'link' ? 'Link' : 'Text'}
+                                </Text>
+                                
+                                <View className="mb-4">
+                                    <Text className="text-sm text-muted-foreground mb-2">Title</Text>
+                                    <TextInput
+                                        className="border border-border rounded-lg p-3 text-foreground bg-card"
+                                        placeholder={`Enter ${inputType} title...`}
+                                        placeholderTextColor={isDarkColorScheme ? "#6b7280" : "#9ca3af"}
+                                        value={inputTitle}
+                                        onChangeText={setInputTitle}
+                                        style={{ fontSize: 16 }}
+                                    />
+                                </View>
+                                
+                                <View className="mb-4">
+                                    <Text className="text-sm text-muted-foreground mb-2">
+                                        {inputType === 'link' ? 'URL' : 'Content'}
+                                    </Text>
+                                    <TextInput
+                                        className="border border-border rounded-lg p-3 text-foreground bg-card"
+                                        placeholder={inputType === 'link' ? 'https://example.com' : 'Enter your text content...'}
+                                        placeholderTextColor={isDarkColorScheme ? "#6b7280" : "#9ca3af"}
+                                        value={inputValue}
+                                        onChangeText={setInputValue}
+                                        multiline={inputType === 'text'}
+                                        style={{ 
+                                            fontSize: 16,
+                                            textAlignVertical: inputType === 'text' ? 'top' : 'center',
+                                            height: inputType === 'text' ? 80 : 44
+                                        }}
+                                    />
+                                </View>
+                            </View>
+                            
+                            <View className="flex-row gap-6">
+                                <Pressable
+                                    className="flex-1 bg-red-500 hover:bg-red-600 active:bg-red-700 p-3 rounded-lg items-center justify-center"
+                                    onPress={handleCancelTextLink}
+                                >
+                                    <Text className="text-white font-medium">Cancel</Text>
+                                </Pressable>
+                                
+                                <Pressable
+                                    className="flex-1 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 p-3 rounded-lg items-center justify-center"
+                                    onPress={handleAddTextLink}
+                                    disabled={!inputValue.trim() || !inputTitle.trim()}
+                                    style={{
+                                        opacity: (!inputValue.trim() || !inputTitle.trim()) ? 0.5 : 1
+                                    }}
+                                >
+                                    <Text className="text-white font-medium">Add</Text>
+                                </Pressable>
+                            </View>
+                        </Animated.View>
                     )}
-                    {displayedFiles}
-                </ScrollView>
+                </Animated.View>
             </View>
 
-            {/* 3-button section - positioned at bottom */}
-            <View className="px-4 pb-4 pt-6">
+            {/* 3-button section - positioned at bottom with animated opacity */}
+            <Animated.View style={[buttonsStyle]} className="px-4 pb-4 pt-3">
                 <View className="flex-row rounded-xl overflow-hidden border border-border">
                     <Pressable 
                         className="flex-1 bg-card active:bg-blue-800/10 hover:bg-blue-900/5 p-3 items-center justify-center"
                         onPress={handleFileSelect}
+                        disabled={showTextInput}
+                        style={{ opacity: showTextInput ? 0.5 : 1 }}
                         >
                         <Ionicons name="folder" size={24} color={isDarkColorScheme ? "#e5e7eb" : "#374151"} />
                         <Text className="text-sm text-center text-foreground mt-1">Files</Text>
@@ -278,7 +463,10 @@ export default function FileSelect() {
 
                     <Pressable 
                         className="flex-1 bg-card active:bg-blue-800/10 hover:bg-blue-900/5 p-3 items-center justify-center"
-                        onPress={() => console.log('Links pressed')}>
+                        onPress={() => handleTextLinkInput('link')}
+                        disabled={showTextInput}
+                        style={{ opacity: showTextInput ? 0.5 : 1 }}
+                        >
                         <Ionicons name="link" size={24} color={isDarkColorScheme ? "#e5e7eb" : "#374151"} />
                         <Text className="text-sm text-center text-foreground mt-1">Links</Text>
                     </Pressable>
@@ -287,12 +475,15 @@ export default function FileSelect() {
 
                     <Pressable 
                         className="flex-1 bg-card active:bg-blue-800/10 hover:bg-blue-900/5 p-3 items-center justify-center"
-                        onPress={() => console.log('Text pressed')}>
+                        onPress={() => handleTextLinkInput('text')}
+                        disabled={showTextInput}
+                        style={{ opacity: showTextInput ? 0.5 : 1 }}
+                        >
                         <Ionicons name="document-text" size={24} color={isDarkColorScheme ? "#e5e7eb" : "#374151"} />
                         <Text className="text-sm text-center text-foreground mt-1">Text</Text>
                     </Pressable>
                 </View>
-            </View>
+            </Animated.View>
         </View>
     )
 }

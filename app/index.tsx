@@ -58,6 +58,7 @@ export default function Screen() {
     const { isDarkColorScheme } = useColorScheme();
     const [step, setStep] = React.useState(0);
     const [canProceed, setCanProceed] = React.useState(false);
+    const [canProceedOptions, setCanProceedOptions] = React.useState(false);
     const leftOpacity = useSharedValue(0.3);
     const leftColor = useSharedValue(isDarkColorScheme ? "#1f2937" : "#4b5563");
     const rightColor = useSharedValue(isDarkColorScheme ? "#1f2937" : "#4b5563");
@@ -165,6 +166,22 @@ export default function Screen() {
         return () => clearInterval(interval);
     }, []);
 
+    // Monitor password changes to enable/disable navigation from Options
+    React.useEffect(() => {
+        const checkPassword = () => {
+            const hasPassword = globalFileData.password.trim().length > 0;
+            setCanProceedOptions(hasPassword);
+        };
+        
+        // Initial check
+        checkPassword();
+        
+        // Set up interval to periodically check for changes
+        const interval = setInterval(checkPassword, 500);
+        
+        return () => clearInterval(interval);
+    }, []);
+
     function decrement() {
         if (step > 0) {
             // Animate card out
@@ -212,6 +229,11 @@ export default function Screen() {
             // Prevent moving from step 0 (FileSelect) if no files have been added
             if (step === 0 && !canProceed) {
                 return; // Don't proceed if no files are selected
+            }
+            
+            // Prevent moving from step 1 (Options) if no password is set
+            if (step === 1 && !canProceedOptions) {
+                return; // Don't proceed if no password is set
             }
             
             // Animate card out
@@ -268,8 +290,8 @@ export default function Screen() {
         }
     })
     const rightButton = useAnimatedStyle(() => {
-        // Show reduced opacity when on step 0 and can't proceed
-        const shouldShowDisabled = step === 0 && !canProceed;
+        // Show reduced opacity when on step 0 and can't proceed, or step 1 without password
+        const shouldShowDisabled = (step === 0 && !canProceed) || (step === 1 && !canProceedOptions);
         return {
             backgroundColor: rightColor.value, 
             width: rightWidth.value, 
@@ -374,24 +396,24 @@ export default function Screen() {
                             <Pressable className="justify-center items-center"
                                 style={[button, rightButton, {height: 48}]}
                                 onPress={increment}
-                                disabled={step === 0 && !canProceed}
+                                disabled={(step === 0 && !canProceed) || (step === 1 && !canProceedOptions)}
                                 onHoverIn={() => {
-                                    if (!(step === 0 && !canProceed)) {
+                                    if (!((step === 0 && !canProceed) || (step === 1 && !canProceedOptions))) {
                                         rightScale.value = withSpring(1.1, {damping: 15, stiffness: 120});
                                     }
                                 }}
                                 onHoverOut={() => {
-                                    if (!(step === 0 && !canProceed)) {
+                                    if (!((step === 0 && !canProceed) || (step === 1 && !canProceedOptions))) {
                                         rightScale.value = withSpring(1, {damping: 15, stiffness: 120});
                                     }
                                 }}
                                 onPressIn={() => {
-                                    if (!(step === 0 && !canProceed)) {
+                                    if (!((step === 0 && !canProceed) || (step === 1 && !canProceedOptions))) {
                                         rightScale.value = withSpring(0.9, {damping: 15, stiffness: 120});
                                     }
                                 }}
                                 onPressOut={() => {
-                                    if (!(step === 0 && !canProceed)) {
+                                    if (!((step === 0 && !canProceed) || (step === 1 && !canProceedOptions))) {
                                         rightScale.value = withSpring(1.1, {damping: 10, stiffness: 120});
                                     }
                                 }}>

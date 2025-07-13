@@ -17,11 +17,13 @@ export default function Options() {
     const [isPasswordFocused, setIsPasswordFocused] = React.useState(false);
     const [isPasswordHovered, setIsPasswordHovered] = React.useState(false);
     const [expiration, setExpiration] = React.useState<number>(60 * 60);
+    const [viewLimit, setViewLimit] = React.useState<string>('');
 
     // Load global state on mount
     React.useEffect(() => {
         setPassword(globalFileData.password);
         setExpiration(globalFileData.expiration);
+        setViewLimit(globalFileData.viewLimit?.toString() || '');
     }, []);
 
     // Save password changes to global state
@@ -36,6 +38,14 @@ export default function Options() {
         globalFileData.expiration = newExpiration;
     };
 
+    // Save view limit changes to global state
+    const handleViewLimitChange = (newLimit: string) => {
+        // Only allow positive numbers
+        const numericValue = newLimit.replace(/[^0-9]/g, '');
+        setViewLimit(numericValue);
+        globalFileData.viewLimit = numericValue ? parseInt(numericValue) : undefined;
+    };
+
     const expirationOptions = [
         { label: '1 hour', value: 60*60 },
         { label: '1 day', value: 60*60*24 },
@@ -44,16 +54,17 @@ export default function Options() {
 
     const selectedOption = expirationOptions.find(option => option.value === expiration);
 
+    const WrapperComponent = Platform.OS === 'web' ? View : Pressable;
+    const wrapperProps = Platform.OS === 'web' 
+        ? { className: "flex-1 justify-between", style: { userSelect: 'none' } }
+        : { 
+            className: "flex-1 justify-between", 
+            style: { userSelect: 'none' },
+            onPress: () => Keyboard.dismiss()
+          };
+
     return (
-        <Pressable 
-            className="flex-1 justify-between" 
-            style={{ userSelect: 'none' }}
-            onPress={() => {
-                if (Platform.OS !== 'web') {
-                    Keyboard.dismiss();
-                }
-            }}
-        >
+        <WrapperComponent {...wrapperProps}>
             <View className="px-6 pb-3">
                 <Text className="text-lg font-semibold text-foreground">Step 2: Configure Options</Text>
                 <Text className="text-sm text-muted-foreground mt-1">Set a password and sharing options.</Text>
@@ -107,8 +118,25 @@ export default function Options() {
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </View>
+
+                    {/* View Limit Field */}
+                    <View>
+                        <Text className="text-sm text-muted-foreground mb-2">View Limit (Optional)</Text>
+                        <TextInput
+                            className="border border-border rounded-lg p-3 text-foreground bg-white dark:bg-white"
+                            placeholder="Enter view limit..."
+                            placeholderTextColor={isDarkColorScheme ? "#6b7280" : "#9ca3af"}
+                            value={viewLimit}
+                            onChangeText={handleViewLimitChange}
+                            keyboardType="numeric"
+                            style={{ fontSize: 16, color: '#000000' }}
+                        />
+                        <Text className="text-xs text-muted-foreground mt-1">
+                            Maximum number of times this secret can be viewed. Leave empty for unlimited.
+                        </Text>
+                    </View>
                 </View>
             </View>
-        </Pressable>
+        </WrapperComponent>
     );
 }

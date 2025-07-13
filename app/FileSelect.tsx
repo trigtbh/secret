@@ -43,12 +43,14 @@ export let globalFileData: {
     hasFiles: boolean;
     password: string;
     expiration: number;
+    viewLimit?: number;
 } = {
     files: [],
     totalBytes: 0,
     hasFiles: false,
     password: '',
-    expiration: 60 * 60 // Default to 1 hour
+    expiration: 60 * 60, // Default to 1 hour
+    viewLimit: undefined
 };
 
 
@@ -114,7 +116,8 @@ export default function FileSelect() {
                 totalBytes,
                 hasFiles,
                 password: globalFileData.password,
-                expiration: globalFileData.expiration
+                expiration: globalFileData.expiration,
+                viewLimit: globalFileData.viewLimit
             };
             console.log('Saved file data:', globalFileData.files.length, 'files');
         } catch (error) {
@@ -142,7 +145,8 @@ export default function FileSelect() {
                 totalBytes: 0,
                 hasFiles: false,
                 password: '',
-                expiration: 60 * 60
+                expiration: 60 * 60,
+                viewLimit: undefined
             };
             setFileData([]);
             setTotalBytes(0);

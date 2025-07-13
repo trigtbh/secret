@@ -74,6 +74,10 @@ export default function Screen() {
     const cardOpacity = useSharedValue(0); // Start at 0 for initial animation
     const cardTranslateX = useSharedValue(20); // Start slightly right
     
+    // Progress dots animation values
+    const dotColors = Array.from({ length: STEPS - 1 }, () => useSharedValue(isDarkColorScheme ? "#374151" : "#9ca3af"));
+    const dotOpacities = Array.from({ length: STEPS - 1 }, () => useSharedValue(1));
+    
     const arrowStyle = useAnimatedStyle(() => {
         return {
             transform: [
@@ -111,7 +115,36 @@ export default function Screen() {
     React.useEffect(() => {
         cardOpacity.value = withTiming(1, { duration: 300 });
         cardTranslateX.value = withTiming(0, { duration: 300 });
+        
+        // Initialize dot colors based on current step
+        dotColors.forEach((dotColor, index) => {
+            if (index <= step) {
+                dotColor.value = withTiming(isDarkColorScheme ? "#3b82f6" : "#000000ff", { duration: 300 });
+            } else {
+                dotColor.value = withTiming(isDarkColorScheme ? "#374151" : "#cfdaecff", { duration: 300 });
+            }
+        });
     }, []);
+
+    // Update dot colors when step changes
+    React.useEffect(() => {
+        dotColors.forEach((dotColor, index) => {
+            if (index <= step) {
+                dotColor.value = withTiming(isDarkColorScheme ? "#3b82f6" : "#000000ff", { duration: 200 });
+            } else {
+                dotColor.value = withTiming(isDarkColorScheme ? "#374151" : "#cfdaecff", { duration: 200 });
+            }
+        });
+        
+        // Fade out dots on final step
+        dotOpacities.forEach((dotOpacity) => {
+            if (step === STEPS - 1) {
+                dotOpacity.value = withTiming(0, { duration: 300 });
+            } else {
+                dotOpacity.value = withTiming(1, { duration: 300 });
+            }
+        });
+    }, [step, isDarkColorScheme]);
 
     function decrement() {
         if (step > 0) {
@@ -285,6 +318,28 @@ export default function Screen() {
                                     color="white"/>
                             </Pressable>
                         </Animated.View>
+                        
+                        {/* Progress Dots */}
+                        <View className="flex-row items-center gap-2">
+                            {Array.from({ length: STEPS - 1 }, (_, index) => {
+                                const dotStyle = useAnimatedStyle(() => {
+                                    return {
+                                        backgroundColor: dotColors[index].value,
+                                        opacity: dotOpacities[index].value,
+                                    };
+                                });
+                                
+                                return (
+                                    <Animated.View
+                                        key={index}
+                                        entering={FadeIn.delay(index * 50)}
+                                        style={dotStyle}
+                                        className="w-2 h-2 rounded-full"
+                                    />
+                                );
+                            })}
+                        </View>
+                        
                         <Animated.View  className="rounded-full"
                             style={
                                 [rightButton, {height: 48}]

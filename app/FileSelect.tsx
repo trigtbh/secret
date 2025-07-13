@@ -163,7 +163,7 @@ export default function FileSelect() {
                 <Text className="text-xs text-muted-foreground mt-1">{smallFileSize(file.length)}</Text>
             </View>
             <Pressable 
-                className="ml-2 p-1 active:bg-muted rounded hover:bg-muted/60"
+                className="ml-2 p-1 active:bg-blue-800/15 rounded hover:bg-blue-900/10"
                 onPress={() => {
                     const newFileData = fileData.filter((_, i) => i !== index);
                     const newTotalBytes = totalBytes - file.length;
@@ -195,8 +195,18 @@ export default function FileSelect() {
                     const newFiles: Content[] = [];
                     let newBytes = totalBytes;
                     let limitExceeded = false;
+                    let skippedDuplicates = 0;
                     
                     for (const file of Array.from(files)) {
+                        // Check if file with same name already exists
+                        const isDuplicate = fileData.some(existingFile => existingFile.name === file.name);
+                        
+                        if (isDuplicate) {
+                            console.log('Skipping duplicate file:', file.name);
+                            skippedDuplicates++;
+                            continue;
+                        }
+                        
                         const arrayBuffer = await file.arrayBuffer();
                         const byteArray = new Uint8Array(arrayBuffer);
                         
@@ -257,7 +267,7 @@ export default function FileSelect() {
             <View className="px-4 pb-4 pt-6">
                 <View className="flex-row rounded-xl overflow-hidden border border-border">
                     <Pressable 
-                        className="flex-1 bg-card active:bg-muted hover:bg-muted/50 p-3 items-center justify-center"
+                        className="flex-1 bg-card active:bg-blue-800/10 hover:bg-blue-900/5 p-3 items-center justify-center"
                         onPress={handleFileSelect}
                         >
                         <Ionicons name="folder" size={24} color={isDarkColorScheme ? "#e5e7eb" : "#374151"} />
@@ -267,7 +277,7 @@ export default function FileSelect() {
                     <View className="w-px bg-border" />
 
                     <Pressable 
-                        className="flex-1 bg-card active:bg-muted hover:bg-muted/50 p-3 items-center justify-center"
+                        className="flex-1 bg-card active:bg-blue-800/10 hover:bg-blue-900/5 p-3 items-center justify-center"
                         onPress={() => console.log('Links pressed')}>
                         <Ionicons name="link" size={24} color={isDarkColorScheme ? "#e5e7eb" : "#374151"} />
                         <Text className="text-sm text-center text-foreground mt-1">Links</Text>
@@ -276,7 +286,7 @@ export default function FileSelect() {
                     <View className="w-px bg-border" />
 
                     <Pressable 
-                        className="flex-1 bg-card active:bg-muted hover:bg-muted/50 p-3 items-center justify-center"
+                        className="flex-1 bg-card active:bg-blue-800/10 hover:bg-blue-900/5 p-3 items-center justify-center"
                         onPress={() => console.log('Text pressed')}>
                         <Ionicons name="document-text" size={24} color={isDarkColorScheme ? "#e5e7eb" : "#374151"} />
                         <Text className="text-sm text-center text-foreground mt-1">Text</Text>

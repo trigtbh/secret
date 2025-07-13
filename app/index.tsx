@@ -10,9 +10,9 @@ import Animated, {
     LayoutAnimationConfig,
     useAnimatedProps,
     useAnimatedStyle,
-    useSharedValue,
-    withSpring,
-    withTiming
+    useSharedValue,       
+    withTiming,
+    withSpring
 } from 'react-native-reanimated';
 import {Info} from '~/lib/icons/Info';
 import {Avatar, AvatarFallback, AvatarImage} from '~/components/ui/avatar';
@@ -298,7 +298,7 @@ export default function Screen() {
         <SafeAreaView className="flex-1 justify-center items-center gap-5 bg-background" style={{userSelect: 'none'}}>
         <Animated.View entering={FadeInUp.damping(50).stiffness(60)}
             exiting={FadeOutDown}
-            className="w-full max-w-sm">
+            className="w-full max-w-sm mx-4">
             <Card className="w-full max-w-sm rounded-2xl">
                     <CardHeader className="pb-3.5 flex-row justify-between items-center">
                         <CardTitle className="text-4xl">New Secret</CardTitle>
@@ -311,7 +311,7 @@ export default function Screen() {
                     
                     <Animated.View 
                         style={cardContentStyle}
-                        className="min-h-[300px]">
+                        className="min-h-[350px] sm:min-h-[300px]">
                         {renderCardContent()}
                     </Animated.View>
                     

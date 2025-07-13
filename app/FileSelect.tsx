@@ -6,7 +6,7 @@ import {
     CardHeader,
     CardTitle
 }  from '~/components/ui/card';
-import {Pressable, View, Platform, ScrollView, TextInput} from 'react-native';
+import {Pressable, View, Platform, ScrollView, TextInput, Keyboard} from 'react-native';
 import Animated, {
     FadeInUp,
     FadeOutDown,
@@ -94,7 +94,7 @@ export default function FileSelect() {
         };
 
         // Only add the event listener in web environment
-        if (typeof window !== 'undefined') {
+        if (Platform.OS === 'web' && typeof window !== 'undefined') {
             window.addEventListener('beforeunload', handleBeforeUnload);
             
             return () => {
@@ -264,7 +264,11 @@ export default function FileSelect() {
         
         setTimeout(() => {
             setShowTextInput(true);
-            windowHeight.value = withTiming(350, { duration: 400 }); // Slightly reduced height
+            windowHeight.value = withTiming(
+                Platform.OS !== 'web' 
+                    ? (type === 'link' ? 280 : 300) 
+                    : (type === 'link' ? 320 : 360), 
+                { duration: 400 }); // Different heights for web vs mobile
             textInputOpacity.value = withTiming(1, { duration: 400 });
         }, 400);
         
@@ -357,7 +361,15 @@ export default function FileSelect() {
     }));
 
     return (
-        <View className="flex-1 justify-between" style={{ userSelect: 'none' }}>
+        <Pressable 
+            className="flex-1 justify-between" 
+            style={{ userSelect: 'none' }}
+            onPress={() => {
+                if (Platform.OS !== 'web') {
+                    Keyboard.dismiss();
+                }
+            }}
+        >
             <View className="px-6 pb-3">
                 <Text className="text-lg font-semibold text-foreground">Step 1: Add Content</Text>
                 <Text className="text-sm text-muted-foreground mt-1">Select components to add to your secret.</Text>
@@ -384,13 +396,13 @@ export default function FileSelect() {
 
                     {/* Text input content - always rendered but animated opacity */}
                     {showTextInput && (
-                        <Animated.View style={[textInputStyle]} className="absolute inset-0 p-4 justify-between">
-                            <View>
-                                <Text className="text-lg font-semibold text-foreground mb-4">
+                        <Animated.View style={[textInputStyle]} className="absolute inset-0 p-4 flex-col">
+                            <View className="flex-1">
+                                <Text className="text-lg font-semibold text-foreground mb-3">
                                     Add {inputType === 'link' ? 'Link' : 'Text'}
                                 </Text>
                                 
-                                <View className="mb-4">
+                                <View className="mb-3">
                                     <Text className="text-sm text-muted-foreground mb-2">Title</Text>
                                     <TextInput
                                         className="border border-border rounded-lg p-3 text-foreground bg-card"
@@ -484,6 +496,6 @@ export default function FileSelect() {
                     </Pressable>
                 </View>
             </Animated.View>
-        </View>
+        </Pressable>
     )
 }

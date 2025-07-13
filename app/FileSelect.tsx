@@ -37,7 +37,7 @@ type Content = {
 const STORAGE_KEY = 'fileSelectData';
 
 // Global variable to store file data during session (clears on refresh)
-let globalFileData: {
+export let globalFileData: {
     files: Content[];
     totalBytes: number;
     hasFiles: boolean;

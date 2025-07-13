@@ -34,7 +34,9 @@ import {useColorScheme} from '~/lib/useColorScheme';
 import Ionicon from "@expo/vector-icons/Ionicons";
 
 
-import FileSelect from '~/app/FileSelect';
+import FileSelect, { globalFileData } from '~/app/FileSelect';
+import Options from '~/app/Options';
+import Display from '~/app/Display';
 import { Separator } from '~/components/ui/separator';
 
 
@@ -55,6 +57,7 @@ const rotationOffset = 180;
 export default function Screen() {
     const { isDarkColorScheme } = useColorScheme();
     const [step, setStep] = React.useState(0);
+    const [canProceed, setCanProceed] = React.useState(false);
     const leftOpacity = useSharedValue(0.3);
     const leftColor = useSharedValue(isDarkColorScheme ? "#1f2937" : "#4b5563");
     const rightColor = useSharedValue(isDarkColorScheme ? "#1f2937" : "#4b5563");
@@ -146,6 +149,22 @@ export default function Screen() {
         });
     }, [step, isDarkColorScheme]);
 
+    // Monitor file data changes to enable/disable navigation
+    React.useEffect(() => {
+        const checkFileData = () => {
+            const hasFiles = globalFileData.files.length > 0;
+            setCanProceed(hasFiles);
+        };
+        
+        // Initial check
+        checkFileData();
+        
+        // Set up interval to periodically check for changes
+        const interval = setInterval(checkFileData, 500);
+        
+        return () => clearInterval(interval);
+    }, []);
+
     function decrement() {
         if (step > 0) {
             // Animate card out
@@ -190,6 +209,11 @@ export default function Screen() {
     }
     function increment() {
         if (step < STEPS - 1) {
+            // Prevent moving from step 0 (FileSelect) if no files have been added
+            if (step === 0 && !canProceed) {
+                return; // Don't proceed if no files are selected
+            }
+            
             // Animate card out
             cardOpacity.value = withTiming(0, { duration: 150 });
             cardTranslateX.value = withTiming(-20, { duration: 150 });
@@ -244,11 +268,14 @@ export default function Screen() {
         }
     })
     const rightButton = useAnimatedStyle(() => {
+        // Show reduced opacity when on step 0 and can't proceed
+        const shouldShowDisabled = step === 0 && !canProceed;
         return {
             backgroundColor: rightColor.value, 
             width: rightWidth.value, 
             borderColor: rightBorder.value,
-            transform: [{scale: rightScale.value}]
+            transform: [{scale: rightScale.value}],
+            opacity: shouldShowDisabled ? 0.3 : 1
         }
     })
 
@@ -257,11 +284,11 @@ export default function Screen() {
             case 0:
                 return <FileSelect />;
             case 1:
-                return <View className="flex-1 justify-center items-center"><Text className="text-foreground">Options Component</Text></View>;
+                return <Options />;
             case 2:
-                return <View className="flex-1 justify-center items-center"><Text className="text-foreground">Confirm Component</Text></View>;
+                return <Display />;
             case 3:
-                return <View className="flex-1 justify-center items-center"><Text className="text-foreground">Upload Component</Text></View>;
+                return <View className="flex-1 justify-center items-center"><Text className="text-foreground">Confirm Component</Text></View>;
             default:
                 return <FileSelect />;
         }
@@ -347,17 +374,26 @@ export default function Screen() {
                             <Pressable className="justify-center items-center"
                                 style={[button, rightButton, {height: 48}]}
                                 onPress={increment}
+                                disabled={step === 0 && !canProceed}
                                 onHoverIn={() => {
-                                    rightScale.value = withSpring(1.1, {damping: 15, stiffness: 120});
+                                    if (!(step === 0 && !canProceed)) {
+                                        rightScale.value = withSpring(1.1, {damping: 15, stiffness: 120});
+                                    }
                                 }}
                                 onHoverOut={() => {
-                                    rightScale.value = withSpring(1, {damping: 15, stiffness: 120});
+                                    if (!(step === 0 && !canProceed)) {
+                                        rightScale.value = withSpring(1, {damping: 15, stiffness: 120});
+                                    }
                                 }}
                                 onPressIn={() => {
-                                    rightScale.value = withSpring(0.9, {damping: 15, stiffness: 120});
+                                    if (!(step === 0 && !canProceed)) {
+                                        rightScale.value = withSpring(0.9, {damping: 15, stiffness: 120});
+                                    }
                                 }}
                                 onPressOut={() => {
-                                    rightScale.value = withSpring(1.1, {damping: 10, stiffness: 120});
+                                    if (!(step === 0 && !canProceed)) {
+                                        rightScale.value = withSpring(1.1, {damping: 10, stiffness: 120});
+                                    }
                                 }}>
                                 <Animated.View style={arrowStyle}>
                                     <Ionicon name="arrow-forward" size={24} color="white"/>

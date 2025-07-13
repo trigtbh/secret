@@ -44,13 +44,23 @@ export let globalFileData: {
     password: string;
     expiration: number;
     viewLimit?: number;
+    title?: string;
+    description?: string;
+    selectedColors?: {
+        background: string;
+        foreground: string;
+        accent: string;
+    };
 } = {
     files: [],
     totalBytes: 0,
     hasFiles: false,
     password: '',
     expiration: 60 * 60, // Default to 1 hour
-    viewLimit: undefined
+    viewLimit: undefined,
+    title: '',
+    description: '',
+    selectedColors: undefined
 };
 
 

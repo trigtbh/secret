@@ -34,6 +34,19 @@ type Content = {
     length: number
 }
 
+const STORAGE_KEY = 'fileSelectData';
+
+// Global variable to store file data during session (clears on refresh)
+let globalFileData: {
+    files: Content[];
+    totalBytes: number;
+    hasFiles: boolean;
+} = {
+    files: [],
+    totalBytes: 0,
+    hasFiles: false
+};
+
 
 function smallFileSize(size: number): string {
     if (size < 1024) return size + ' B';
@@ -46,6 +59,78 @@ export default function FileSelect() {
     const [hasFiles, setHasFiles] = React.useState(false);
     const [fileData, setFileData] = React.useState<Content[]>([]); // Add state for file data
     const [totalBytes, setTotalBytes] = React.useState(0); // Add state for bytes
+
+    // Load data from global variable on component mount
+    React.useEffect(() => {
+        loadFileData();
+    }, []);
+
+    // Save data to global variable whenever fileData changes
+    React.useEffect(() => {
+        saveFileData();
+    }, [fileData, totalBytes]);
+
+    // Add beforeunload event listener to warn about unsaved changes
+    React.useEffect(() => {
+        const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+            if (hasFiles && fileData.length > 0) {
+                event.preventDefault();
+                event.returnValue = ''; // Chrome requires returnValue to be set
+                return ''; // Some browsers require a return value
+            }
+        };
+
+        // Only add the event listener in web environment
+        if (typeof window !== 'undefined') {
+            window.addEventListener('beforeunload', handleBeforeUnload);
+            
+            return () => {
+                window.removeEventListener('beforeunload', handleBeforeUnload);
+            };
+        }
+    }, [hasFiles, fileData.length]);
+
+    const saveFileData = () => {
+        try {
+            globalFileData = {
+                files: fileData,
+                totalBytes,
+                hasFiles
+            };
+            console.log('Saved file data:', globalFileData.files.length, 'files');
+        } catch (error) {
+            console.error('Error saving file data:', error);
+        }
+    };
+
+    const loadFileData = () => {
+        try {
+            if (globalFileData.files.length > 0) {
+                setFileData(globalFileData.files);
+                setTotalBytes(globalFileData.totalBytes);
+                setHasFiles(globalFileData.hasFiles);
+                console.log('Loaded', globalFileData.files.length, 'files from global state');
+            }
+        } catch (error) {
+            console.error('Error loading file data:', error);
+        }
+    };
+
+    const clearFileData = () => {
+        try {
+            globalFileData = {
+                files: [],
+                totalBytes: 0,
+                hasFiles: false
+            };
+            setFileData([]);
+            setTotalBytes(0);
+            setHasFiles(false);
+            console.log('Cleared all file data');
+        } catch (error) {
+            console.error('Error clearing file data:', error);
+        }
+    };
 
     // Function to get appropriate icon based on type
     const getSourceIcon = (type: 'file' | 'link' | 'text') => {
@@ -81,11 +166,14 @@ export default function FileSelect() {
                 className="ml-2 p-1 active:bg-muted rounded"
                 onPress={() => {
                     const newFileData = fileData.filter((_, i) => i !== index);
+                    const newTotalBytes = totalBytes - file.length;
+                    const newHasFiles = newFileData.length > 0;
+                    
                     setFileData(newFileData);
-                    setTotalBytes(prev => prev - file.length);
-                    if (newFileData.length === 0) {
-                        setHasFiles(false);
-                    }
+                    setTotalBytes(newTotalBytes);
+                    setHasFiles(newHasFiles);
+                    
+                    console.log('Removed file, remaining:', newFileData.length);
                 }}
             >
                 <Ionicons name="close" size={16} color={isDarkColorScheme ? "#9ca3af" : "#6b7280"} />
@@ -106,6 +194,7 @@ export default function FileSelect() {
                 if (files && files.length > 0) {
                     const newFiles: Content[] = [];
                     let newBytes = totalBytes;
+                    let limitExceeded = false;
                     
                     for (const file of Array.from(files)) {
                         const arrayBuffer = await file.arrayBuffer();
@@ -113,8 +202,9 @@ export default function FileSelect() {
                         
                         newBytes += file.size;
                         
-                        if (newBytes > (1024 ** 3)) {
+                        if (newBytes > (1024 * 1024)) { // 1MB limit
                             alert("Please keep data uploads below 1MB.");
+                            limitExceeded = true;
                             break;
                         }
                         
@@ -128,10 +218,12 @@ export default function FileSelect() {
                         console.log('Selected file:', file.name, file.size, file.type);
                     }
                     
-                    // Update state with new files (append to existing)
-                    setFileData(prevData => [...prevData, ...newFiles]);
-                    setTotalBytes(newBytes);
-                    setHasFiles(true);
+                    // Only update state if no limit was exceeded and we have new files
+                    if (!limitExceeded && newFiles.length > 0) {
+                        setFileData(prevData => [...prevData, ...newFiles]);
+                        setTotalBytes(newBytes);
+                        setHasFiles(true);
+                    }
                 }
             };
             
@@ -142,26 +234,18 @@ export default function FileSelect() {
     };
 
     return (
-        <View className="flex-1 justify-between">        <View className="flex-1 px-6" >
-            <ScrollView className="max-h-60 rounded-lg border border-border flex-1" showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }}>
-                {!hasFiles && (
-                    <View className="flex-1 justify-center items-center">
-                        <Text className="text-base italic text-center" style={{opacity: 0.5}}>
-                            Use the buttons below to add files.
-                        </Text>
-                    </View>
-                )}
-                {displayedFiles}
-            </ScrollView>
-
-                {/* Your main content here - file list, etc. */}
-                <View className="mx-6 mb-6">
-                    {hasFiles && (
-                        <Text className="text-center text-foreground">
-                            {fileData.length} file{fileData.length !== 1 ? 's' : ''} selected
-                        </Text>
+        <View className="flex-1 justify-between">
+            <View className="flex-1 px-6">
+                <ScrollView className="max-h-48 rounded-lg border border-border flex-1" showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }}>
+                    {!hasFiles && (
+                        <View className="flex-1 justify-center items-center">
+                            <Text className="text-base italic text-center" style={{opacity: 0.5}}>
+                                Use the buttons below to add files.
+                            </Text>
+                        </View>
                     )}
-                </View>
+                    {displayedFiles}
+                </ScrollView>
             </View>
 
             {/* 3-button section - positioned at bottom */}

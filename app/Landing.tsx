@@ -16,6 +16,7 @@ import { useColorScheme } from '~/lib/useColorScheme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemeToggle } from '~/components/ThemeToggle';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
 
 interface LandingProps {
     onCreateSecret: () => void;
@@ -110,10 +111,43 @@ export default function Landing({ onCreateSecret, onOpenSecret, showContent = tr
                         </Text>
                     </Animated.View>
 
+                    {/* Feature Circles and Blurb */}
+                    <Animated.View 
+                        entering={isInitialLoad ? FadeInUp.delay(500).damping(50).stiffness(60) : FadeIn.duration(300)}
+                        className="w-full"
+                    >
+                        <View className="flex-row justify-between items-center mb-4">
+                            <View style={{ alignItems: 'center', flex: 1 }}>
+                                <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: isDarkColorScheme ? '#1f2937' : '#e0e7ef', justifyContent: 'center', alignItems: 'center', marginBottom: 4 }}>
+                                    <Ionicons name="key" size={22} color={isDarkColorScheme ? "#9ca3af" : "#6b7280"} />
+                                </View>
+                                <View style={{ height: 32, justifyContent: 'flex-start' }}>
+                                    <Text className="text-xs text-center text-muted-foreground" style={{ maxWidth: 70 }}>Complete in-transit encryption</Text>
+                                </View>
+                            </View>
+                            <View style={{ alignItems: 'center', flex: 1 }}>
+                                <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: isDarkColorScheme ? '#1f2937' : '#e0e7ef', justifyContent: 'center', alignItems: 'center', marginBottom: 4 }}>
+                                    <Ionicons name="flash" size={22} color={isDarkColorScheme ? "#9ca3af" : "#6b7280"} />
+                                </View>
+                                <View style={{ height: 32, justifyContent: 'flex-start' }}>
+                                    <Text className="text-xs text-center text-muted-foreground" style={{ maxWidth: 70 }}>Quick and easy to set up</Text>
+                                </View>
+                            </View>
+                            <View style={{ alignItems: 'center', flex: 1 }}>
+                                <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: isDarkColorScheme ? '#1f2937' : '#e0e7ef', justifyContent: 'center', alignItems: 'center', marginBottom: 4 }}>
+                                    <Ionicons name="brush" size={22} color={isDarkColorScheme ? "#9ca3af" : "#6b7280"} />
+                                </View>
+                                <View style={{ height: 32, justifyContent: 'flex-start' }}>
+                                    <Text className="text-xs text-center text-muted-foreground" style={{ maxWidth: 70 }}>Highly customizable</Text>
+                                </View>
+                            </View>
+                        </View>
+                    </Animated.View>
+
                     {/* Action Buttons */}
                     <Animated.View 
                         entering={isInitialLoad ? FadeInUp.delay(600).damping(50).stiffness(60) : undefined}
-                        className="w-full gap-3 mt-4"
+                        className="w-full gap-3"
                     >
                         {/* Create Secret Button */}
                         <Pressable

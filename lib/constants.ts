@@ -1,3 +1,11 @@
+// Base URL Configuration
+// Change this to your production domain when deploying
+export const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL || 
+                       (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
+
+// API Configuration - always at /api relative to base URL
+export const API_BASE_URL = `${BASE_URL}/api`;
+
 export const NAV_THEME = {
   light: {
     background: 'hsl(0 0% 100%)', // background

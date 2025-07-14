@@ -38,6 +38,7 @@ import FileSelect, { globalFileData } from '~/app/FileSelect';
 import Options from '~/app/Options';
 import Display from '~/app/Display';
 import Confirm from '~/app/Confirm';
+import Upload from '~/app/Upload';
 import { Separator } from '~/components/ui/separator';
 
 
@@ -52,7 +53,32 @@ console.warn = (...args) => {
 
 const AIcon = Animated.createAnimatedComponent(Ionicon);
 
-const STEPS = 4;
+// Progress Dots Component to avoid conditional hook calls
+function ProgressDots({ dotColors, dotOpacities }: { dotColors: any[], dotOpacities: any[] }) {
+    return (
+        <View className="flex-row items-center gap-2">
+            {Array.from({ length: 3 }, (_, index) => {
+                const dotStyle = useAnimatedStyle(() => {
+                    return {
+                        backgroundColor: dotColors[index].value,
+                        opacity: dotOpacities[index].value,
+                    };
+                });
+                
+                return (
+                    <Animated.View
+                        key={index}
+                        entering={FadeIn.delay(index * 50)}
+                        style={dotStyle}
+                        className="w-2 h-2 rounded-full"
+                    />
+                );
+            })}
+        </View>
+    );
+}
+
+const STEPS = 5;
 const rotationOffset = 180;
 
 export default function Screen() {
@@ -79,9 +105,9 @@ export default function Screen() {
     const cardOpacity = useSharedValue(0); // Start at 0 for initial animation
     const cardTranslateX = useSharedValue(20); // Start slightly right
     
-    // Progress dots animation values
-    const dotColors = Array.from({ length: STEPS - 1 }, () => useSharedValue(isDarkColorScheme ? "#374151" : "#9ca3af"));
-    const dotOpacities = Array.from({ length: STEPS - 1 }, () => useSharedValue(1));
+    // Progress dots animation values - only 3 dots
+    const dotColors = Array.from({ length: 3 }, () => useSharedValue(isDarkColorScheme ? "#374151" : "#9ca3af"));
+    const dotOpacities = Array.from({ length: 3 }, () => useSharedValue(1));
     
     const arrowStyle = useAnimatedStyle(() => {
         return {
@@ -141,9 +167,9 @@ export default function Screen() {
             }
         });
         
-        // Fade out dots on final step
+        // Fade out dots on confirm step (step 3) and beyond
         dotOpacities.forEach((dotOpacity) => {
-            if (step === STEPS - 1) {
+            if (step >= 3) {
                 dotOpacity.value = withTiming(0, { duration: 300 });
             } else {
                 dotOpacity.value = withTiming(1, { duration: 300 });
@@ -204,9 +230,28 @@ export default function Screen() {
                     leftColor.value = withTiming(isDarkColorScheme ? "#1f2937" : "#4b5563");
                 }
                 
-                // Handle right button when going from final step back to previous
-                if (step === STEPS - 1) {
-                    // Coming from final step (green) back to normal
+                // Handle right button when going back to confirm step (step 3) or higher
+                if (newStep >= 3) {
+                    // Going back to confirm step or higher - turn green and show checkmark
+                    rightColor.value = withTiming("#22c55e");
+                    rotation.value = withSpring(125, {
+                        damping: 25,
+                        stiffness: 120
+                    }, () => {
+                        rotation.value = 125;
+                    });
+                    arrowOpacity.value = withTiming(0, {duration: 300});
+                    checkOpacity.value = withTiming(1, {duration: 300});
+                    rightWidth.value = withSpring(120, {
+                        damping: 25,
+                        stiffness: 120
+                    });
+                    rightBorder.value = withTiming("#16a34a");
+                }
+                
+                // Handle right button when going back below confirm step (step 3)
+                if (step >= 3 && newStep < 3) {
+                    // Coming from confirm step or higher (green) back to normal
                     rotation.value = withSpring(0, {
                         damping: 25,
                         stiffness: 120
@@ -256,9 +301,9 @@ export default function Screen() {
                     leftColor.value = withTiming(isDarkColorScheme ? "#1f2937" : "#4b5563");
                 }
                 
-                // Handle right button when reaching final step
-                if (newStep === STEPS - 1) {
-                    // Reached final step - turn green and show checkmark
+                // Handle right button when reaching confirm step (step 3) or higher
+                if (newStep >= 3) {
+                    // Reached confirm step or beyond - turn green and show checkmark
                     rightColor.value = withTiming("#22c55e");
                     rotation.value = withSpring(125, {
                         damping: 25,
@@ -312,6 +357,8 @@ export default function Screen() {
                 return <Display />;
             case 3:
                 return <Confirm />;
+            case 4:
+                return <Upload />;
             default:
                 return <FileSelect />;
         }
@@ -339,93 +386,83 @@ export default function Screen() {
                     </Animated.View>
                     
                     <View className="flex-row justify-between items-center p-4">
-                        <Animated.View className="rounded-full"
-                            style={
-                                [leftButton, {height: 48, width: 48}]
-                        }>
-                            <Pressable className="justify-center items-center"
-                                style={
-                                    [button, leftButton, {height: 48, width: 48}]
-                                }
-                                disabled={
-                                    step === 0
-                                }
-                                onPress={decrement}
-                                onHoverIn={() => {
-                                    leftScale.value = withSpring(1.1, {damping: 15, stiffness: 120});
-                                }}
-                                onHoverOut={() => {
-                                    leftScale.value = withSpring(1, {damping: 15, stiffness: 120});
-                                }}
-                                onPressIn={() => {
-                                    leftScale.value = withSpring(0.9, {damping: 15, stiffness: 120});
-                                }}
-                                onPressOut={() => {
-                                    leftScale.value = withSpring(1.1, {damping: 10, stiffness: 120});
-                                }}>
-                                <Ionicon name="arrow-back"
-                                    size={24}
-                                    color="white"/>
-                            </Pressable>
-                        </Animated.View>
-                        
-                        {/* Progress Dots */}
-                        <View className="flex-row items-center gap-2">
-                            {Array.from({ length: STEPS - 1 }, (_, index) => {
-                                const dotStyle = useAnimatedStyle(() => {
-                                    return {
-                                        backgroundColor: dotColors[index].value,
-                                        opacity: dotOpacities[index].value,
-                                    };
-                                });
+                        {/* Only show navigation buttons before step 4 (Upload) */}
+                        {step < 4 ? (
+                            <>
+                                <Animated.View className="rounded-full"
+                                    style={
+                                        [leftButton, {height: 48, width: 48}]
+                                }>
+                                    <Pressable className="justify-center items-center"
+                                        style={
+                                            [button, leftButton, {height: 48, width: 48}]
+                                        }
+                                        disabled={
+                                            step === 0
+                                        }
+                                        onPress={decrement}
+                                        onHoverIn={() => {
+                                            leftScale.value = withSpring(1.1, {damping: 15, stiffness: 120});
+                                        }}
+                                        onHoverOut={() => {
+                                            leftScale.value = withSpring(1, {damping: 15, stiffness: 120});
+                                        }}
+                                        onPressIn={() => {
+                                            leftScale.value = withSpring(0.9, {damping: 15, stiffness: 120});
+                                        }}
+                                        onPressOut={() => {
+                                            leftScale.value = withSpring(1.1, {damping: 10, stiffness: 120});
+                                        }}>
+                                        <Ionicon name="arrow-back"
+                                            size={24}
+                                            color="white"/>
+                                    </Pressable>
+                                </Animated.View>
                                 
-                                return (
-                                    <Animated.View
-                                        key={index}
-                                        entering={FadeIn.delay(index * 50)}
-                                        style={dotStyle}
-                                        className="w-2 h-2 rounded-full"
-                                    />
-                                );
-                            })}
-                        </View>
-                        
-                        <Animated.View  className="rounded-full"
-                            style={
-                                [rightButton, {height: 48}]
-                        }>
-                            <Pressable className="justify-center items-center"
-                                style={[button, rightButton, {height: 48}]}
-                                onPress={increment}
-                                disabled={(step === 0 && !canProceed) || (step === 1 && !canProceedOptions)}
-                                onHoverIn={() => {
-                                    if (!((step === 0 && !canProceed) || (step === 1 && !canProceedOptions))) {
-                                        rightScale.value = withSpring(1.1, {damping: 15, stiffness: 120});
-                                    }
-                                }}
-                                onHoverOut={() => {
-                                    if (!((step === 0 && !canProceed) || (step === 1 && !canProceedOptions))) {
-                                        rightScale.value = withSpring(1, {damping: 15, stiffness: 120});
-                                    }
-                                }}
-                                onPressIn={() => {
-                                    if (!((step === 0 && !canProceed) || (step === 1 && !canProceedOptions))) {
-                                        rightScale.value = withSpring(0.9, {damping: 15, stiffness: 120});
-                                    }
-                                }}
-                                onPressOut={() => {
-                                    if (!((step === 0 && !canProceed) || (step === 1 && !canProceedOptions))) {
-                                        rightScale.value = withSpring(1.1, {damping: 10, stiffness: 120});
-                                    }
-                                }}>
-                                <Animated.View style={arrowStyle}>
-                                    <Ionicon name="arrow-forward" size={24} color="white"/>
+                                {/* Progress Dots */}
+                                <ProgressDots dotColors={dotColors} dotOpacities={dotOpacities} />
+                                
+                                <Animated.View  className="rounded-full"
+                                    style={
+                                        [rightButton, {height: 48}]
+                                }>
+                                    <Pressable className="justify-center items-center"
+                                        style={[button, rightButton, {height: 48}]}
+                                        onPress={increment}
+                                        disabled={(step === 0 && !canProceed) || (step === 1 && !canProceedOptions)}
+                                        onHoverIn={() => {
+                                            if (!((step === 0 && !canProceed) || (step === 1 && !canProceedOptions))) {
+                                                rightScale.value = withSpring(1.1, {damping: 15, stiffness: 120});
+                                            }
+                                        }}
+                                        onHoverOut={() => {
+                                            if (!((step === 0 && !canProceed) || (step === 1 && !canProceedOptions))) {
+                                                rightScale.value = withSpring(1, {damping: 15, stiffness: 120});
+                                            }
+                                        }}
+                                        onPressIn={() => {
+                                            if (!((step === 0 && !canProceed) || (step === 1 && !canProceedOptions))) {
+                                                rightScale.value = withSpring(0.9, {damping: 15, stiffness: 120});
+                                            }
+                                        }}
+                                        onPressOut={() => {
+                                            if (!((step === 0 && !canProceed) || (step === 1 && !canProceedOptions))) {
+                                                rightScale.value = withSpring(1.1, {damping: 10, stiffness: 120});
+                                            }
+                                        }}>
+                                        <Animated.View style={arrowStyle}>
+                                            <Ionicon name="arrow-forward" size={24} color="white"/>
+                                        </Animated.View>
+                                        <Animated.View style={checkStyle}>
+                                            <Ionicon name="checkmark" size={24} color="black"/>
+                                        </Animated.View>
+                                    </Pressable>
                                 </Animated.View>
-                                <Animated.View style={checkStyle}>
-                                    <Ionicon name="checkmark" size={24} color="black"/>
-                                </Animated.View>
-                            </Pressable>
-                        </Animated.View>
+                            </>
+                        ) : (
+                            // Empty space to maintain layout when buttons are hidden
+                            <View className="flex-1" />
+                        )}
                     </View>
                 </Card>
             </Animated.View>

@@ -245,8 +245,8 @@ export default function FileSelect() {
                         
                         newBytes += file.size;
                         
-                        if (newBytes > (1024 * 1024)) { // 1MB limit
-                            alert("Please keep data uploads below 1MB.");
+                        if (newBytes > (1024 * 1024 * 1024)) { // 1GB limit
+                            alert("Please keep data uploads below 1GB.");
                             limitExceeded = true;
                             break;
                         }
@@ -307,8 +307,8 @@ export default function FileSelect() {
         
         // Check size limit
         const newBytes = totalBytes + contentBytes.length;
-        if (newBytes > (1024 * 1024)) {
-            alert("Please keep data uploads below 1MB.");
+        if (newBytes > (1024 * 1024 * 1024)) {
+            alert("Please keep data uploads below 1GB.");
             return;
         }
         

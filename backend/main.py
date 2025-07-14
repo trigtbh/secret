@@ -9,7 +9,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 
-import random
+import random, json
+import time
 
 from typing import *
 
@@ -81,35 +82,94 @@ async def root(request: Request):
     return {"message": "This server is running Secret."}
 
 
-def write_bucket(id_, file_name, data):
+def write_bucket(id_, data):
     try:
         object_storage.put_object(
             namespace,
             bucket_name,
-            f"{id_}/{file_name}",
+            f"{id_}",
             data
         )
     except oci.exceptions.ServiceError as e:
-        print(f"Error uploading file {file_name} to bucket {bucket_name}: {e}")
+        print(f"Error uploading {id_} to bucket {bucket_name}: {e}")
         raise e
 
-
-def read_bucket(id_, file_name):
+def read_bucket(id_):
     try:
         response = object_storage.get_object(
             namespace,
             bucket_name,
-            f"{id_}/{file_name}"
+            f"{id_}"
         )
-        return response.data
+        return response.data.raw
     except oci.exceptions.ServiceError as e:
-        print(f"Error reading file {file_name} from bucket {bucket_name}: {e}")
+        print(f"Error reading {id_} from bucket {bucket_name}: {e}")
         raise e
 
 
+@app.get("/api/check/{id_}")
+@limiter.limit("5/minute")
+async def check_id(request: Request, id_: str):
+    response = {
+        "exists": True,
+        "time": True,
+        "downloads": True
+    }
+    try:
+        object_storage.get_object(
+            namespace,
+            bucket_name,
+            id_
+        )
+    except oci.exceptions.ServiceError as e:
+        if e.status == 404:
+            response["exists"] = False
+        else:
+            return JSONResponse(
+                status_code=500,
+                content={"message": "Error checking ID existence."}
+            )
+        
+    if response["exists"]:
 
 
+        data = json.load(read_bucket(id_))
+        if data.get("settings", {}).get("expiration", 0) < time.time():
+            response["time"] = False
+        if data.get("settings", {}).get("viewLimit", None) is not None:
+            if data["settings"]["viewLimit"] <= 0:
+                response["downloads"] = False
 
+    return response
+
+@app.get("/api/get/{id_}")
+@limiter.limit("5/minute")
+async def get_id(request: Request, id_: str):
+    # check if exists(id) is true for all 3
+    response = await check_id(request, id_)
+    print(response)
+    if not all(response.values()):
+        return JSONResponse(
+            status_code=404,
+            content={"message": "ID not found or inaccessible."}
+        )
+    try:
+        data = json.load(read_bucket(id_))
+    except Exception as e:
+        print(f"Error reading data for ID {id_}: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={"message": "Error reading data."}
+        )
+    
+    # decrement view limit
+    if data.get("settings", {}).get("viewLimit", None) is not None:
+        if data["settings"]["viewLimit"] > 0:
+            data["settings"]["viewLimit"] -= 1
+            write_bucket(id_, json.dumps(data).encode('utf-8'))
+    
+    return data
+        
 
 @app.post("/api/upload")
 @limiter.limit("5/minute")
@@ -146,6 +206,8 @@ async def upload(request: Request, json: UploadRequestModel):
         for _ in range(6):
             identifier += random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 
+
+    json.settings.expiration += time.time()
 
     try:
         object_storage.put_object(

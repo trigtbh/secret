@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { View, Platform, Pressable, Image, Linking } from 'react-native';
+import { View, Platform, Pressable, Image, Linking, TextInput } from 'react-native';
 import Animated, {
     FadeInUp,
     FadeOutDown,
@@ -7,6 +7,9 @@ import Animated, {
     FadeOutLeft,
     FadeIn,
     FadeOut,
+    useSharedValue,
+    useAnimatedStyle,
+    withTiming,
 } from 'react-native-reanimated';
 import { Text } from '~/components/ui/text';
 import { useColorScheme } from '~/lib/useColorScheme';
@@ -33,6 +36,40 @@ export default function Landing({ onCreateSecret, onOpenSecret, showContent = tr
     const openTrigProfile = () => {
         Linking.openURL('https://trigtbh.dev');
     };
+
+    const [openSecretPressed, setOpenSecretPressed] = React.useState(false);
+    const [showSecretInput, setShowSecretInput] = React.useState(false);
+    const [secretCode, setSecretCode] = React.useState("");
+    const openSecretOpacity = useSharedValue(1);
+    const secretInputOpacity = useSharedValue(0);
+    const openSecretAnimatedStyle = useAnimatedStyle(() => ({
+        opacity: openSecretOpacity.value,
+    }));
+    const secretInputAnimatedStyle = useAnimatedStyle(() => ({
+        opacity: secretInputOpacity.value,
+    }));
+
+    React.useEffect(() => {
+        if (showSecretInput) {
+            secretInputOpacity.value = withTiming(1, { duration: 400 });
+        }
+    }, [showSecretInput]);
+
+    const handleCloseSecretInput = React.useCallback(() => {
+        secretInputOpacity.value = withTiming(0, { duration: 400 });
+        setTimeout(() => {
+            setShowSecretInput(false);
+            setOpenSecretPressed(false);
+            openSecretOpacity.value = withTiming(1, { duration: 400 });
+        }, 400);
+    }, [secretInputOpacity, openSecretOpacity]);
+
+    const handleCheckmark = React.useCallback(() => {
+        if (secretCode.trim()) {
+            const baseUrl = typeof window !== "undefined" ? window.location.origin : "https://secret.trigtbh.dev";
+            Linking.openURL(`${baseUrl}/${secretCode.trim()}`);
+        }
+    }, [secretCode]);
 
     return (
         <SafeAreaView className="flex-1 justify-center items-center gap-5 bg-background">
@@ -88,10 +125,58 @@ export default function Landing({ onCreateSecret, onOpenSecret, showContent = tr
 
                         {/* Open Secret Button */}
                         <Pressable
-                            className="w-full border border-border bg-card hover:bg-muted active:bg-muted/80 p-3 rounded-lg items-center justify-center"
-                            onPress={onOpenSecret}
+                            className={`w-full border border-border bg-card rounded-lg items-center justify-center${showSecretInput ? '' : ' hover:bg-muted active:bg-muted/80 p-3'}`}
+                            style={{ minHeight: 24 }}
+                            onPress={() => {
+                                if (!openSecretPressed && !showSecretInput) {
+                                    setOpenSecretPressed(true);
+                                    openSecretOpacity.value = withTiming(0, { duration: 400 });
+                                    setTimeout(() => {
+                                        setShowSecretInput(true);
+                                    }, 400);
+                                }
+                            }}
+                            disabled={showSecretInput}
                         >
-                            <Text className="text-foreground font-semibold text-base">Open Secret</Text>
+                            {!showSecretInput && (
+                                <Animated.Text
+                                    className="text-foreground font-semibold text-base"
+                                    style={[openSecretAnimatedStyle, { minHeight: 24, textAlign: 'center' }]}
+                                >
+                                    {'Open Secret'}
+                                </Animated.Text>
+                            )}
+                            {showSecretInput && (
+                                <Animated.View style={[secretInputAnimatedStyle, { width: '100%', alignItems: 'center', flexDirection: 'row', gap: 8, minHeight: 48 }]}> 
+                                    <Pressable style={{ marginHorizontal: 16 }} onPress={handleCloseSecretInput}>
+                                        <Text style={{ fontSize: 20, color: '#e53e3e' }}>✕</Text>
+                                    </Pressable>
+                                    <View style={{ flex: 1 }}>
+                                        <TextInput
+                                            placeholder="Enter secret code..."
+                                            value={secretCode}
+                                            onChangeText={setSecretCode}
+                                            style={[
+                                                {
+                                                    backgroundColor: 'transparent',
+                                                    paddingHorizontal: 8,
+                                                    paddingVertical: 2,
+                                                    fontSize: 13,
+                                                    borderWidth: 0,
+                                                },
+                                                Platform.OS === 'web' && {
+                                                    outlineStyle: 'none' as any,
+                                                    outlineColor: 'transparent' as any,
+                                                },
+                                            ]}
+                                            className="text-muted-foreground"
+                                        />
+                                    </View>
+                                    <Pressable style={{ marginHorizontal: 16 }} onPress={handleCheckmark}>
+                                        <Text style={{ fontSize: 20, color: '#38a169' }}>✓</Text>
+                                    </Pressable>
+                                </Animated.View>
+                            )}
                         </Pressable>
                     </Animated.View>
 

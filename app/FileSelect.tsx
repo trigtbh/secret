@@ -177,7 +177,7 @@ export default function FileSelect() {
             case 'link':
                 return <Ionicons name="link" size={20} color={iconColor} />;
             case 'text':
-                return <Ionicons name="document-text" size={20} color={iconColor} />;
+                return <Ionicons name="text" size={20} color={iconColor} />;
             default:
                 return <Ionicons name="document-attach" size={20} color={iconColor} />;
         }
@@ -514,7 +514,7 @@ export default function FileSelect() {
                         disabled={showTextInput}
                         style={{ opacity: showTextInput ? 0.5 : 1 }}
                         >
-                        <Ionicons name="document-text" size={24} color={isDarkColorScheme ? "#e5e7eb" : "#374151"} />
+                        <Ionicons name="text" size={24} color={isDarkColorScheme ? "#e5e7eb" : "#374151"} />
                         <Text className="text-sm text-center text-foreground mt-1">Text</Text>
                     </Pressable>
                 </View>

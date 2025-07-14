@@ -125,7 +125,7 @@ export default function Display() {
                     <Animated.View style={fieldsStyle}>
                         <View className="gap-4">
                             <View>
-                                <Text className="text-sm text-muted-foreground mb-2">Title</Text>
+                                <Text className="text-sm text-muted-foreground mb-2">Title (Optional)</Text>
                                 <TextInput
                                     value={title}
                                     onChangeText={(text) => {

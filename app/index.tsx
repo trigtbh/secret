@@ -37,6 +37,7 @@ import Ionicon from "@expo/vector-icons/Ionicons";
 import FileSelect, { globalFileData } from '~/app/FileSelect';
 import Options from '~/app/Options';
 import Display from '~/app/Display';
+import Confirm from '~/app/Confirm';
 import { Separator } from '~/components/ui/separator';
 
 
@@ -310,7 +311,7 @@ export default function Screen() {
             case 2:
                 return <Display />;
             case 3:
-                return <View className="flex-1 justify-center items-center"><Text className="text-foreground">Confirm Component</Text></View>;
+                return <Confirm />;
             default:
                 return <FileSelect />;
         }

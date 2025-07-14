@@ -51,6 +51,7 @@ export let globalFileData: {
         foreground: string;
         accent: string;
     };
+    uploadResult?: string;
 } = {
     files: [],
     totalBytes: 0,

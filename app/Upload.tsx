@@ -70,7 +70,6 @@ async function uploadSecret(payload: any): Promise<string> {
         
         // Simulate network delay
         await new Promise(resolve => setTimeout(resolve, 2000)); // 2 second delay
-        
         // Mock successful response
         const mockResponse = {
             ID: 'mock-' + Math.random().toString(36).substring(2, 15),
@@ -180,17 +179,11 @@ async function performUpload(): Promise<string> {
     }
 }
 
-export default function Upload() {
+export default function Upload({ onComplete }: { onComplete?: () => void }) {
     const { isDarkColorScheme } = useColorScheme();
     const [uploadState, setUploadState] = React.useState<'idle' | 'encrypting' | 'uploading' | 'complete' | 'error'>('idle');
     const [uploadResult, setUploadResult] = React.useState<string>('');
     const [errorMessage, setErrorMessage] = React.useState<string>('');
-    const [copyState, setCopyState] = React.useState<'idle' | 'copying' | 'success'>('idle');
-    const [linkCopyState, setLinkCopyState] = React.useState<'idle' | 'copying' | 'success'>('idle');
-    const rotationAnim = React.useRef(new Animated.Value(0)).current;
-    const fadeAnim = React.useRef(new Animated.Value(1)).current;
-    const linkRotationAnim = React.useRef(new Animated.Value(0)).current;
-    const linkFadeAnim = React.useRef(new Animated.Value(1)).current;
 
     // Start the upload process when component mounts
     React.useEffect(() => {
@@ -210,7 +203,11 @@ export default function Upload() {
             const ID = await uploadSecret(payload);
             
             setUploadResult(ID);
-            setUploadState('complete');
+            // Store result in global data for Results page
+            globalFileData.uploadResult = ID;
+            
+            // Immediately transition to results page without showing completion state
+            onComplete?.();
         } catch (error) {
             console.error('Upload process failed:', error);
             setErrorMessage(error instanceof Error ? error.message : 'Upload failed');
@@ -261,19 +258,15 @@ export default function Upload() {
             <View className="px-6 pb-3">
                 <Text className="text-lg font-semibold text-foreground">Step 5: Upload</Text>
                 <Text className="text-sm text-muted-foreground mt-1">
-                    {uploadState === 'complete' ? 'Your secret has been uploaded successfully.' : 'Uploading data...'}
+                    Uploading data...
                 </Text>
             </View>
             
-            <View className="flex-1 px-6 justify-center">
-                <View className="rounded-lg border border-border bg-card p-6 gap-4 items-center">
+            <View className="flex-1 px-6">
+                <View className="flex-1 rounded-lg border border-border bg-card p-6 items-center justify-center">
                     {/* Loading spinner or status icon */}
                     {uploadState === 'encrypting' || uploadState === 'uploading' ? (
                         <View className="w-12 h-12 rounded-full border-4 border-muted-foreground/20 border-t-blue-500 animate-spin" />
-                    ) : uploadState === 'complete' ? (
-                        <View className="w-12 h-12 rounded-full bg-blue-500 items-center justify-center">
-                            <Text className="text-white text-xl">✓</Text>
-                        </View>
                     ) : uploadState === 'error' ? (
                         <View className="w-12 h-12 rounded-full bg-red-500 items-center justify-center">
                             <Text className="text-white text-xl">✗</Text>
@@ -281,233 +274,23 @@ export default function Upload() {
                     ) : null}
                     
                     {/* Main status text */}
-                    <Text className="text-lg font-semibold text-foreground text-center">
+                    <Text className="text-lg font-semibold text-foreground text-center mt-4">
                         {getLoadingText()}
                     </Text>
                     
                     {/* Sub status text */}
-                    <Text className="text-sm text-muted-foreground text-center">
+                    <Text className="text-sm text-muted-foreground text-center mt-2">
                         {getSubText()}
                     </Text>
                     
                     {/* Progress indicator */}
                     {(uploadState === 'encrypting' || uploadState === 'uploading') && (
-                        <View className="w-full bg-muted rounded-full h-2 mt-2">
+                        <View className="w-full max-w-xs bg-muted rounded-full h-2 mt-4">
                             <View 
                                 className={`h-2 rounded-full transition-all duration-300 ${
                                     uploadState === 'encrypting' ? 'w-1/2 bg-blue-500' : 'w-full bg-blue-500'
                                 }`} 
                             />
-                        </View>
-                    )}
-                    
-                    {/* Success message with copy options */}
-                    {uploadState === 'complete' && uploadResult && (
-                        <View className="mt-4 w-full gap-3">
-                            {/* ID with inline copy button */}
-                            <View className="flex-row items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                                <Text className="text-sm text-blue-800 dark:text-blue-200 flex-1">
-                                    ID: <Text className="font-mono text-blue-800 dark:text-blue-200">{uploadResult}</Text>
-                                </Text>
-                                <Pressable
-                                    className="bg-blue-500 hover:bg-blue-600 active:bg-blue-700 p-2 rounded-md ml-2"
-                                    onPress={async () => {
-                                        try {
-                                            setCopyState('copying');
-                                            
-                                            // Start rotation and fade animations
-                                            Animated.parallel([
-                                                Animated.timing(rotationAnim, {
-                                                    toValue: 1,
-                                                    duration: 400,
-                                                    useNativeDriver: true,
-                                                }),
-                                                Animated.sequence([
-                                                    Animated.timing(fadeAnim, {
-                                                        toValue: 0,
-                                                        duration: 200,
-                                                        useNativeDriver: true,
-                                                    }),
-                                                    Animated.timing(fadeAnim, {
-                                                        toValue: 1,
-                                                        duration: 200,
-                                                        useNativeDriver: true,
-                                                    })
-                                                ])
-                                            ]).start();
-                                            
-                                            // Wait for half the animation before changing state
-                                            setTimeout(() => {
-                                                setCopyState('success');
-                                            }, 200);
-                                            
-                                            if (Platform.OS === 'web' && navigator.clipboard) {
-                                                await navigator.clipboard.writeText(uploadResult);
-                                            }
-                                            
-                                            console.log('Copied ID to clipboard:', uploadResult);
-                                            
-                                            // Reset to idle after 2 seconds with fade animation
-                                            setTimeout(() => {
-                                                // Start fade out and rotation animation back to copy icon
-                                                Animated.parallel([
-                                                    Animated.timing(rotationAnim, {
-                                                        toValue: 2,
-                                                        duration: 400,
-                                                        useNativeDriver: true,
-                                                    }),
-                                                    Animated.sequence([
-                                                        Animated.timing(fadeAnim, {
-                                                            toValue: 0,
-                                                            duration: 200,
-                                                            useNativeDriver: true,
-                                                        }),
-                                                        Animated.timing(fadeAnim, {
-                                                            toValue: 1,
-                                                            duration: 200,
-                                                            useNativeDriver: true,
-                                                        })
-                                                    ])
-                                                ]).start(() => {
-                                                    // Reset animations after completion
-                                                    rotationAnim.setValue(0);
-                                                    fadeAnim.setValue(1);
-                                                });
-                                                
-                                                // Change state back during fade
-                                                setTimeout(() => {
-                                                    setCopyState('idle');
-                                                }, 200);
-                                            }, 2000);
-                                        } catch (error) {
-                                            console.error('Failed to copy ID:', error);
-                                            setCopyState('idle');
-                                            rotationAnim.setValue(0);
-                                            fadeAnim.setValue(1);
-                                        }
-                                    }}
-                                >
-                                    <Animated.View
-                                        style={{
-                                            opacity: fadeAnim,
-                                            transform: [{
-                                                rotate: rotationAnim.interpolate({
-                                                    inputRange: [0, 1, 2],
-                                                    outputRange: copyState === 'success' ? ['-180deg', '0deg', '180deg'] : ['0deg', '180deg', '360deg'],
-                                                })
-                                            }]
-                                        }}
-                                    >
-                                        {copyState === 'success' ? (
-                                            <Ionicons name="checkmark" size={16} color="white" />
-                                        ) : (
-                                            <Ionicons name="copy-outline" size={16} color="white" />
-                                        )}
-                                    </Animated.View>
-                                </Pressable>
-                            </View>
-                            
-                            {/* Separator */}
-                            <Text className="text-center text-muted-foreground text-sm">or</Text>
-                            
-                            {/* Copy Link Button */}
-                            <Pressable
-                                className="bg-blue-500 hover:bg-blue-600 active:bg-blue-700 p-3 rounded-lg items-center justify-center flex-row gap-2"
-                                onPress={async () => {
-                                    try {
-                                        setLinkCopyState('copying');
-                                        
-                                        // Start rotation and fade animations for link icon
-                                        Animated.parallel([
-                                            Animated.timing(linkRotationAnim, {
-                                                toValue: 1,
-                                                duration: 400,
-                                                useNativeDriver: true,
-                                            }),
-                                            Animated.sequence([
-                                                Animated.timing(linkFadeAnim, {
-                                                    toValue: 0,
-                                                    duration: 200,
-                                                    useNativeDriver: true,
-                                                }),
-                                                Animated.timing(linkFadeAnim, {
-                                                    toValue: 1,
-                                                    duration: 200,
-                                                    useNativeDriver: true,
-                                                })
-                                            ])
-                                        ]).start();
-                                        
-                                        // Wait for half the animation before changing state
-                                        setTimeout(() => {
-                                            setLinkCopyState('success');
-                                        }, 200);
-                                        
-                                        const shareLink = `${BASE_URL}/${uploadResult}`;
-                                        if (Platform.OS === 'web' && navigator.clipboard) {
-                                            await navigator.clipboard.writeText(shareLink);
-                                        }
-                                        console.log('Copied link to clipboard:', shareLink);
-                                        
-                                        // Reset to idle after 2 seconds with fade animation
-                                        setTimeout(() => {
-                                            // Start fade out and rotation animation back to link icon
-                                            Animated.parallel([
-                                                Animated.timing(linkRotationAnim, {
-                                                    toValue: 2,
-                                                    duration: 400,
-                                                    useNativeDriver: true,
-                                                }),
-                                                Animated.sequence([
-                                                    Animated.timing(linkFadeAnim, {
-                                                        toValue: 0,
-                                                        duration: 200,
-                                                        useNativeDriver: true,
-                                                    }),
-                                                    Animated.timing(linkFadeAnim, {
-                                                        toValue: 1,
-                                                        duration: 200,
-                                                        useNativeDriver: true,
-                                                    })
-                                                ])
-                                            ]).start(() => {
-                                                // Reset animations after completion
-                                                linkRotationAnim.setValue(0);
-                                                linkFadeAnim.setValue(1);
-                                            });
-                                            
-                                            // Change state back during fade
-                                            setTimeout(() => {
-                                                setLinkCopyState('idle');
-                                            }, 200);
-                                        }, 2000);
-                                    } catch (error) {
-                                        console.error('Failed to copy link:', error);
-                                        setLinkCopyState('idle');
-                                        linkRotationAnim.setValue(0);
-                                        linkFadeAnim.setValue(1);
-                                    }
-                                }}
-                            >
-                                <Animated.View
-                                    style={{
-                                        opacity: linkFadeAnim,
-                                        transform: [{
-                                            rotate: linkRotationAnim.interpolate({
-                                                inputRange: [0, 1, 2],
-                                                outputRange: linkCopyState === 'success' ? ['-180deg', '0deg', '180deg'] : ['0deg', '180deg', '360deg'],
-                                            })
-                                        }]
-                                    }}
-                                >
-                                    {linkCopyState === 'success' ? (
-                                        <Ionicons name="checkmark" size={16} color="white" />
-                                    ) : (
-                                        <Ionicons name="link-outline" size={16} color="white" />
-                                    )}
-                                </Animated.View>
-                                <Text className="text-white font-medium">Copy Link</Text>
-                            </Pressable>
                         </View>
                     )}
                 </View>

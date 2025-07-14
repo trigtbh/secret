@@ -39,6 +39,7 @@ import Options from '~/app/Options';
 import Display from '~/app/Display';
 import Confirm from '~/app/Confirm';
 import Upload from '~/app/Upload';
+import Results from '~/app/Results';
 import { Separator } from '~/components/ui/separator';
 
 
@@ -78,7 +79,7 @@ function ProgressDots({ dotColors, dotOpacities }: { dotColors: any[], dotOpacit
     );
 }
 
-const STEPS = 5;
+const STEPS = 6;
 const rotationOffset = 180;
 
 export default function Screen() {
@@ -358,7 +359,9 @@ export default function Screen() {
             case 3:
                 return <Confirm />;
             case 4:
-                return <Upload />;
+                return <Upload onComplete={increment} />;
+            case 5:
+                return <Results />;
             default:
                 return <FileSelect />;
         }
@@ -386,7 +389,7 @@ export default function Screen() {
                     </Animated.View>
                     
                     <View className="flex-row justify-between items-center p-4">
-                        {/* Only show navigation buttons before step 4 (Upload) */}
+                        {/* Only show navigation buttons before step 4 (Upload) and step 5 (Results) */}
                         {step < 4 ? (
                             <>
                                 <Animated.View className="rounded-full"

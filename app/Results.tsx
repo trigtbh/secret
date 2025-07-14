@@ -33,7 +33,7 @@ export default function Results() {
                 <View className="rounded-lg border border-border bg-card p-6 gap-4 items-center">
                     {/* Success icon */}
                     <View className="w-12 h-12 rounded-full bg-blue-500 items-center justify-center">
-                        <Text className="text-white text-xl">✓</Text>
+                        <Ionicons name="checkmark" size={24} color="white" />
                     </View>
                     
                     {/* Main status text */}

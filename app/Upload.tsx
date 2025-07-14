@@ -269,7 +269,7 @@ export default function Upload({ onComplete }: { onComplete?: () => void }) {
                         <View className="w-12 h-12 rounded-full border-4 border-muted-foreground/20 border-t-blue-500 animate-spin" />
                     ) : uploadState === 'error' ? (
                         <View className="w-12 h-12 rounded-full bg-red-500 items-center justify-center">
-                            <Text className="text-white text-xl">✗</Text>
+                            <Ionicons name="close" size={24} color="white" />
                         </View>
                     ) : null}
                     

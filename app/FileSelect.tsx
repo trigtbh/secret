@@ -71,6 +71,23 @@ function smallFileSize(size: number): string {
     else return (size / (1024 * 1024)).toFixed(1) + ' MB';
 }
 
+// Export the reset function for use by other components
+export const resetAllGlobalData = () => {
+    globalFileData = {
+        files: [],
+        totalBytes: 0,
+        hasFiles: false,
+        password: '',
+        expiration: 60 * 60, // Default to 1 hour
+        viewLimit: undefined,
+        title: '',
+        description: '',
+        selectedColors: undefined,
+        uploadResult: undefined
+    };
+    console.log('Global data reset to defaults');
+};
+
 export default function FileSelect() {
     const { isDarkColorScheme } = useColorScheme();
     const [hasFiles, setHasFiles] = React.useState(false);
@@ -133,6 +150,37 @@ export default function FileSelect() {
             console.log('Saved file data:', globalFileData.files.length, 'files');
         } catch (error) {
             console.error('Error saving file data:', error);
+        }
+    };
+
+    const resetAllData = () => {
+        try {
+            // Reset global state to defaults
+            globalFileData = {
+                files: [],
+                totalBytes: 0,
+                hasFiles: false,
+                password: '',
+                expiration: 60 * 60, // Default to 1 hour
+                viewLimit: undefined,
+                title: '',
+                description: '',
+                selectedColors: undefined,
+                uploadResult: undefined
+            };
+            
+            // Reset local component state
+            setFileData([]);
+            setTotalBytes(0);
+            setHasFiles(false);
+            setShowTextInput(false);
+            setInputType('text');
+            setInputValue('');
+            setInputTitle('');
+            
+            console.log('Reset all data to defaults');
+        } catch (error) {
+            console.error('Error resetting data:', error);
         }
     };
 

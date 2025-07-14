@@ -65,21 +65,8 @@ async function createUploadPayload(password: string) {
 // Upload the payload to your endpoint
 async function uploadSecret(payload: any): Promise<string> {
     try {
-        // MOCK API CALL - Remove this when your real API is ready
-        console.log('Mock upload - payload size:', JSON.stringify(payload).length, 'characters');
         
-        // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 2000)); // 2 second delay
-        // Mock successful response
-        const mockResponse = {
-            ID: 'mock-' + Math.random().toString(36).substring(2, 15),
-            status: 'success'
-        };
-        
-        return mockResponse.ID;
-        
-        /* REAL API CALL - Uncomment when your backend is ready
-        const response = await fetch(`${API_BASE_URL}/upload-secret`, {
+        const response = await fetch(`${API_BASE_URL}/upload`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -92,8 +79,8 @@ async function uploadSecret(payload: any): Promise<string> {
         }
         
         const result = await response.json();
-        return result.ID || result.url; // Return whatever identifier your API provides
-        */
+        return result.ID; // Return whatever identifier your API provides
+        
     } catch (error) {
         console.error('Upload error:', error);
         throw error;

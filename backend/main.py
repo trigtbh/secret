@@ -9,7 +9,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 
+import random
+
 from typing import *
+
+import oci
+from oci.config import from_file
+config = from_file(file_location="./.oci/config")
+object_storage = oci.object_storage.ObjectStorageClient(config)
+namespace = object_storage.get_namespace().data
+
+bucket_name = "secret-bucket"
+
 
 limiter = Limiter(key_func=get_remote_address)
 app = FastAPI()
@@ -70,6 +81,36 @@ async def root(request: Request):
     return {"message": "This server is running Secret."}
 
 
+def write_bucket(id_, file_name, data):
+    try:
+        object_storage.put_object(
+            namespace,
+            bucket_name,
+            f"{id_}/{file_name}",
+            data
+        )
+    except oci.exceptions.ServiceError as e:
+        print(f"Error uploading file {file_name} to bucket {bucket_name}: {e}")
+        raise e
+
+
+def read_bucket(id_, file_name):
+    try:
+        response = object_storage.get_object(
+            namespace,
+            bucket_name,
+            f"{id_}/{file_name}"
+        )
+        return response.data
+    except oci.exceptions.ServiceError as e:
+        print(f"Error reading file {file_name} from bucket {bucket_name}: {e}")
+        raise e
+
+
+
+
+
+
 @app.post("/api/upload")
 # @limiter.limit("5/minute")
 async def upload(json: UploadRequestModel):
@@ -81,7 +122,48 @@ async def upload(json: UploadRequestModel):
                 status_code=422,
                 content={"message": "Invalid color format. Use hex format like #RRGGBB."}
             )
+        
+
+    identifier = ""
+    for _ in range(6):
+        identifier += random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+    while True:
+        try:
+            object_storage.get_object(
+                namespace,
+                bucket_name,
+                identifier
+            )
+        except oci.exceptions.ServiceError as e:
+            if e.status == 404: 
+                break
+            else:
+                return JSONResponse(
+                    status_code=500,
+                    content={"message": "Error checking identifier uniqueness."}
+                )
+        identifier = ""
+        for _ in range(6):
+            identifier += random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+
+
+    try:
+        object_storage.put_object(
+            namespace,
+            bucket_name,
+            f"{identifier}",
+            json.model_dump_json(indent=2).encode('utf-8')
+        )
+    except oci.exceptions.ServiceError as e:
+        print(f"Error uploading metadata for identifier {identifier}: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={"message": f"Error uploading metadata: {e.message}"}
+        )
+
+
+
     return {
         "message": "Files uploaded successfully",
-        "ID": str(uuid4()),
+        "ID": identifier,
     }

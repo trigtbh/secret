@@ -17,9 +17,9 @@ export default function Display() {
     
     // Theme-based default colors
     const defaultColors = {
-        background: isDarkColorScheme ? '#1f2937' : '#ffffff',
-        foreground: isDarkColorScheme ? '#f9fafb' : '#111827', 
-        accent: '#3b82f6'
+        background: isDarkColorScheme ? '#070708' : '#969090',
+        foreground: isDarkColorScheme ? '#070708' : '#ffffff', 
+        accent: isDarkColorScheme ? '#5e5e5e' : '#969696'
     };
 
     // Color picker state - initialize from global data or defaults

@@ -112,8 +112,8 @@ def read_bucket(id_, file_name):
 
 
 @app.post("/api/upload")
-# @limiter.limit("5/minute")
-async def upload(json: UploadRequestModel):
+@limiter.limit("5/minute")
+async def upload(request: Request, json: UploadRequestModel):
     # verify colors are valid colors
     for part in json.settings.selectedColors:
         color = part[1]

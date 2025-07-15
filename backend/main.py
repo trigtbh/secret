@@ -240,6 +240,12 @@ app.mount(
     name="expo-assets"
 )
 
+app.mount(
+    "/assets",
+    StaticFiles(directory=os.path.join(static_files_dir, "assets")),
+    name="other-assets"
+)
+
 # Catch-all route to serve the index.html
 # This is crucial for single-page applications with client-side routing
 @app.api_route("/{path_name:path}")

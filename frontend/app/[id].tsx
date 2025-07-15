@@ -8,6 +8,8 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 
 import OpenLoading from "./OpenLoading";
 import OpenError from "./OpenError";
+import OpenPassword from "./OpenPassword";
+import OpenDecrypting from "./OpenDecrypting";
 
 
 import Animated, {
@@ -55,11 +57,13 @@ export default function SecretPage() {
         borderWidth: 1,
     }));
     // Password state for the new step
-    const [password, setPassword] = React.useState('');
+    
     const [showSecret, setShowSecret] = React.useState(false);
+    const [unlockPassword, setUnlockPassword] = React.useState<string | null>(null);
+    const [pendingStep, setPendingStep] = React.useState<string | null>(null);
     const { id } = useLocalSearchParams(); // gets the dynamic id from the URL
     const [loading, setLoading] = React.useState(true);
-    const [secret, setSecret] = React.useState(null);
+    const [secret, setSecret] = React.useState<any>(null);
     const [error, setError] = React.useState<string | null>(null);
     const [checkResult, setCheckResult] = React.useState<{
         exists: boolean;
@@ -111,7 +115,7 @@ export default function SecretPage() {
                     setError("Failed to check link");
                     setLoading(false);
                 });
-        }, 3000);
+        }, 0);
     }, [id, API_BASE_URL]);
 
 
@@ -166,35 +170,31 @@ export default function SecretPage() {
         );
     } else if (displayedStep === 'password') {
         cardStep = (
-            <View className="w-full items-center justify-center gap-4">
-                <Text className="text-xl font-bold text-foreground mb-2">Enter password to unlock secret</Text>
-                <View className="w-full items-center gap-2">
-                    <View className="w-full max-w-xs">
-                        <Text className="text-base text-muted-foreground mb-1">Password</Text>
-                        <View className="border border-border rounded-lg p-2 w-full">
-                            <TextInput
-                                secureTextEntry
-                                value={password}
-                                onChangeText={setPassword}
-                                placeholder="Enter password"
-                                className="text-base text-foreground"
-                                style={{ width: '100%' }}
-                            />
-                        </View>
-                    </View>
-                    <Pressable
-                        className="mt-4 px-4 py-2 bg-primary rounded-lg"
-                        style={{ opacity: password.length > 0 ? 1 : 0.5 }}
-                        disabled={password.length === 0}
-                        onPress={() => {
-                            setShowSecret(true);
-                            setDisplayedStep('secret');
-                        }}
-                    >
-                        <Text className="text-base text-white font-bold">Unlock</Text>
-                    </Pressable>
-                </View>
-            </View>
+            <>
+                {secret.settings?.description && (
+                    <Text className="text-base text-muted-foreground text-center mb-4">
+                        {secret.settings.description}
+                    </Text>
+                )}
+                <OpenPassword
+                    hash={secret.passwordHash}
+                    callback={(password) => {
+                        setUnlockPassword(password);
+                        setPendingStep('decrypting');
+                    }}
+                />
+            </>
+        );
+    } else if (displayedStep === 'decrypting') {
+        cardStep = (
+          <>
+        {secret.settings?.description && (
+                    <Text className="text-base text-muted-foreground text-center mb-4">
+                        {secret.settings.description}
+                    </Text>
+                )}
+        <OpenDecrypting secret={secret} password={unlockPassword ?? ''} onComplete={() => setShowSecret(true)} />
+          </>
         );
     } else if (displayedStep === 'secret') {
         cardStep = (
@@ -216,6 +216,7 @@ export default function SecretPage() {
         if (checkResult && (!checkResult.exists || !checkResult.time || !checkResult.downloads)) return 'invalid';
         if (!secret && checkResult && checkResult.exists && checkResult.time && checkResult.downloads) return 'nosecret';
         // If secret is set, go to password step unless showSecret is true
+        if (secret && displayedStep === 'decrypting') return 'decrypting';
         if (secret && !showSecret) return 'password';
         if (secret && showSecret) return 'secret';
         return 'loading';
@@ -223,7 +224,8 @@ export default function SecretPage() {
 
     // Animate card content transitions (fade/slide) with exit animation before step change
     React.useEffect(() => {
-        const nextStep = getStepString();
+        // If a pending step is set, use it for the next transition
+        const nextStep = pendingStep || getStepString();
         if (nextStep === displayedStep) return;
 
         // Animate out
@@ -232,6 +234,7 @@ export default function SecretPage() {
 
         const timeout = setTimeout(() => {
             setDisplayedStep(nextStep);
+            setPendingStep(null);
             // Animate in
             cardTranslateX.value = nextStep === 'loading' ? -20 : 20;
             cardOpacity.value = withTiming(1, { duration: 150 });
@@ -239,15 +242,22 @@ export default function SecretPage() {
         }, 150);
 
         return () => clearTimeout(timeout);
+    // Add showSecret to dependencies so secret step fades in after unlock
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [loading, error, checkResult, secret]);
+    }, [loading, error, checkResult, secret, showSecret, pendingStep]);
+
+    // Determine the card title based on step and secret
+    let cardTitle = 'Open Secret';
+    if (secret && secret.settings.title) {
+        cardTitle = secret.settings.title;
+    }
 
     return (
         <Animated.View style={[animatedBgStyle]} className="flex-1 justify-center items-center gap-5">
             <Animated.View className="w-full max-w-sm mx-4">
                 <Animated.View style={[animatedCardStyle]} className="w-full max-w-sm rounded-2xl">
                     <CardHeader className="pb-3.5 flex-row justify-between items-center">
-                        <CardTitle className="text-4xl">Open Secret</CardTitle>
+                        <CardTitle className="text-4xl">{cardTitle}</CardTitle>
                         <Image
                             source={require('~/icons/web/icon.png')}
                             style={{ width: 48, height: 48, borderRadius: 12 }}

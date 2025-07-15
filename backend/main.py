@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 from typing import List, Optional, Any
 from fastapi.middleware.cors import CORSMiddleware
 
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from fastapi.exceptions import RequestValidationError
 
 import random, json
@@ -76,10 +76,6 @@ class UploadRequestModel(BaseModel):
 
 from uuid import uuid4
 
-@app.get("/")
-@limiter.limit("5/minute")
-async def root(request: Request):
-    return {"message": "This server is running Secret."}
 
 
 def write_bucket(id_, data):
@@ -229,3 +225,31 @@ async def upload(request: Request, json: UploadRequestModel):
         "message": "Files uploaded successfully",
         "ID": identifier,
     }
+
+import os
+from fastapi.staticfiles import StaticFiles
+
+
+static_files_dir = os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
+
+# Mount the static files directory
+# This will serve files like JS, CSS, and images
+app.mount(
+    "/_expo",
+    StaticFiles(directory=os.path.join(static_files_dir, "_expo")),
+    name="expo-assets"
+)
+
+# Catch-all route to serve the index.html
+# This is crucial for single-page applications with client-side routing
+@app.api_route("/{path_name:path}")
+async def catch_all(request: Request, path_name: str):
+    file_path = os.path.join(static_files_dir, path_name)
+
+    # If the requested path is a file, serve it
+    if os.path.isfile(file_path):
+        return FileResponse(file_path)
+
+    # Otherwise, serve the index.html for client-side routing
+    index_path = os.path.join(static_files_dir, "index.html")
+    return FileResponse(index_path)

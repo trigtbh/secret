@@ -62,7 +62,11 @@ export default function SecretPage() {
     const [showSecret, setShowSecret] = React.useState(false);
     const [unlockPassword, setUnlockPassword] = React.useState<string | null>(null);
     const [pendingStep, setPendingStep] = React.useState<string | null>(null);
+    
     const { id } = useLocalSearchParams(); // gets the dynamic id from the URL
+    // const {id} = "YOUR-ID-HERE"; // will be replaced on the backend
+
+
     const [loading, setLoading] = React.useState(true);
     const [secret, setSecret] = React.useState<any>(null);
     const [error, setError] = React.useState<string | null>(null);

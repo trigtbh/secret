@@ -244,10 +244,10 @@ app.mount(
 # This is crucial for single-page applications with client-side routing
 @app.api_route("/{path_name:path}")
 async def catch_all(request: Request, path_name: str):
-    file_path = os.path.join(static_files_dir, path_name)
+    file_path = os.path.abspath(os.path.join(static_files_dir, path_name))
 
     # If the requested path is a file, serve it
-    if os.path.isfile(file_path):
+    if os.path.isfile(file_path) and file_path.startswith(static_files_dir):
         return FileResponse(file_path)
 
     # Otherwise, serve the index.html for client-side routing

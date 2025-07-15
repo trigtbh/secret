@@ -10,6 +10,7 @@ import OpenLoading from "./OpenLoading";
 import OpenError from "./OpenError";
 import OpenPassword from "./OpenPassword";
 import OpenDecrypting from "./OpenDecrypting";
+import OpenFileView from "./OpenFileView";
 
 
 import Animated, {
@@ -170,32 +171,29 @@ export default function SecretPage() {
         );
     } else if (displayedStep === 'password') {
         cardStep = (
-            <>
-                {secret.settings?.description && (
-                    <Text className="text-base text-muted-foreground text-center mb-4">
-                        {secret.settings.description}
-                    </Text>
-                )}
-                <OpenPassword
-                    hash={secret.passwordHash}
-                    callback={(password) => {
-                        setUnlockPassword(password);
-                        setPendingStep('decrypting');
-                    }}
-                />
-            </>
+            <OpenPassword
+                hash={secret.passwordHash}
+                callback={(password) => {
+                    setUnlockPassword(password);
+                    setPendingStep('decrypting');
+                }}
+            />
         );
     } else if (displayedStep === 'decrypting') {
         cardStep = (
-          <>
-        {secret.settings?.description && (
-                    <Text className="text-base text-muted-foreground text-center mb-4">
-                        {secret.settings.description}
-                    </Text>
-                )}
-        <OpenDecrypting secret={secret} password={unlockPassword ?? ''} onComplete={() => setShowSecret(true)} />
-          </>
+            <OpenDecrypting
+                secret={secret}
+                password={unlockPassword ?? ''}
+                onComplete={(decryptedSecret) => {
+                    setSecret(decryptedSecret);
+                    setPendingStep('fileview');
+                }}
+            />
         );
+    } else if (displayedStep === 'fileview') {
+        // Show the OpenFileView with the decrypted secret
+        const OpenFileView = require('./OpenFileView').default;
+        cardStep = <OpenFileView secret={secret} />;
     } else if (displayedStep === 'secret') {
         cardStep = (
             <>
@@ -215,7 +213,8 @@ export default function SecretPage() {
         if (error) return 'error';
         if (checkResult && (!checkResult.exists || !checkResult.time || !checkResult.downloads)) return 'invalid';
         if (!secret && checkResult && checkResult.exists && checkResult.time && checkResult.downloads) return 'nosecret';
-        // If secret is set, go to password step unless showSecret is true
+        // Persist fileview step if currently displayed
+        if (displayedStep === 'fileview') return 'fileview';
         if (secret && displayedStep === 'decrypting') return 'decrypting';
         if (secret && !showSecret) return 'password';
         if (secret && showSecret) return 'secret';
@@ -264,6 +263,14 @@ export default function SecretPage() {
                             resizeMode="contain"
                         />
                     </CardHeader>
+                    {/* Description always visible inside card, above animated content */}
+                    {secret?.settings?.description && (
+                        <View className="w-full mb-2 px-2">
+                            <Text className="text-base text-muted-foreground text-center">
+                                {secret.settings.description}
+                            </Text>
+                        </View>
+                    )}
                     <Animated.View style={[cardContentStyle]} className="min-h-[350px] sm:min-h-[300px] ">
                         {cardStep}
                     </Animated.View>

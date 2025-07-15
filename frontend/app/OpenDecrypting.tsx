@@ -186,7 +186,7 @@ export default function OpenDecrypting({ secret, password, onComplete }: OpenDec
             setDecryptState('decrypting');
             try {
                 // Add a 30 second delay before starting decryption
-                await new Promise(res => setTimeout(res, 30000));
+                await new Promise(res => setTimeout(res, 3000));
                 if (cancelled) return;
                 if (secret && secret.files && Array.isArray(secret.files)) {
                     if (!password) throw new Error('Missing password for decryption');
@@ -215,7 +215,7 @@ export default function OpenDecrypting({ secret, password, onComplete }: OpenDec
         }
         doDecrypt();
         return () => { cancelled = true; };
-    }, [secret, onComplete]);
+    }, [secret, password]);
 
     const WrapperComponent = Platform.OS === 'web' ? View : View;
     const wrapperProps = Platform.OS === 'web' 
@@ -225,30 +225,16 @@ export default function OpenDecrypting({ secret, password, onComplete }: OpenDec
             style: { userSelect: 'none' }
           };
 
+
+    // Only show 'decrypting' spinner and text, unless error
     const getLoadingText = () => {
-        switch (decryptState) {
-            case 'decrypting':
-                return 'Decrypting your files...';
-            case 'complete':
-                return 'Decryption complete!';
-            case 'error':
-                return 'Decryption failed';
-            default:
-                return 'Preparing decryption...';
-        }
+        if (decryptState === 'error') return 'Decryption failed';
+        return 'Decrypting your files...';
     };
 
     const getSubText = () => {
-        switch (decryptState) {
-            case 'decrypting':
-                return `Unlocking and decrypting ${secret?.files?.length || 0} file${secret?.files?.length === 1 ? '' : 's'}...`;
-            case 'complete':
-                return 'Your files are ready.';
-            case 'error':
-                return errorMessage;
-            default:
-                return 'Initializing decryption process...';
-        }
+        if (decryptState === 'error') return errorMessage;
+        return `Unlocking and decrypting ${secret?.files?.length || 0} file${secret?.files?.length === 1 ? '' : 's'}...`;
     };
 
     return (
@@ -256,13 +242,13 @@ export default function OpenDecrypting({ secret, password, onComplete }: OpenDec
             <View className="flex-1 px-6 pb-6">
                 <View className="flex-1 rounded-lg border border-border bg-card p-6 items-center justify-center">
                     {/* Loading spinner or status icon */}
-                    {decryptState === 'decrypting' ? (
-                        <View className="w-12 h-12 rounded-full border-4 border-muted-foreground/20 border-t-blue-500 animate-spin" />
-                    ) : decryptState === 'error' ? (
+                    {decryptState === 'error' ? (
                         <View className="w-12 h-12 rounded-full bg-red-500 items-center justify-center">
                             <Ionicons name="close" size={24} color="white" />
                         </View>
-                    ) : null}
+                    ) : (
+                        <View className="w-12 h-12 rounded-full border-4 border-muted-foreground/20 border-t-blue-500 animate-spin" />
+                    )}
                     {/* Main status text */}
                     <Text className="text-lg font-semibold text-foreground text-center mt-4">
                         {getLoadingText()}
@@ -272,7 +258,7 @@ export default function OpenDecrypting({ secret, password, onComplete }: OpenDec
                         {getSubText()}
                     </Text>
                     {/* Progress indicator */}
-                    {decryptState === 'decrypting' && (
+                    {decryptState !== 'error' && (
                         <View className="w-full max-w-xs bg-muted rounded-full h-2 mt-4">
                             <View className="h-2 rounded-full transition-all duration-300 w-1/2 bg-blue-500" />
                         </View>

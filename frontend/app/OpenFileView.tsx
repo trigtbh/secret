@@ -31,7 +31,9 @@ type Content = {
     name: string,
     type: 'file' | 'link' | 'text', // Use type to track which button was used
     buffer: Uint8Array,
-    length: number
+    length: number,
+    originalSize: number, // Optional field for original file size
+    decryptedData: Uint8Array; // Optional field for decrypted bytes
 }
 
 const STORAGE_KEY = 'fileSelectData';
@@ -92,7 +94,7 @@ interface OpenFileViewProps {
     secret?: any;
 }
 
-export default function FileSelect({ secret }: OpenFileViewProps) {
+export default function OpenFileView({ secret }: OpenFileViewProps) {
     const { isDarkColorScheme } = useColorScheme();
     const [hasFiles, setHasFiles] = React.useState(false);
     const [fileData, setFileData] = React.useState<Content[]>(secret?.files ?? []); // Use secret.files if provided
@@ -243,7 +245,36 @@ export default function FileSelect({ secret }: OpenFileViewProps) {
         }
     };
 
-    // Remove the global var declarations and create displayedFiles from state
+    // Download handler for web
+    function handleDownload(file: Content) {
+        if (Platform.OS === 'web') {
+            const blob = new Blob([file.decryptedData], { type: 'application/octet-stream' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = file.name;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 100);
+        } else {
+            alert('Download is only supported on web.');
+        }
+    }
+
+    // Open link handler for web
+    function handleOpenLink(file: Content) {
+        if (Platform.OS === 'web') {
+            // The link is stored as a string in the buffer
+            const url = new TextDecoder().decode(file.decryptedData);
+            window.open(url, '_blank', 'noopener,noreferrer');
+        } else {
+            alert('Opening links is only supported on web.');
+        }
+    }
+
     const displayedFiles = fileData.map((file, index) => (
         <Animated.View 
             key={index} 
@@ -255,157 +286,28 @@ export default function FileSelect({ secret }: OpenFileViewProps) {
             </View>
             <View className="flex-1">
                 <Text className="text-sm text-foreground">{file.name}</Text>
-                <Text className="text-xs text-muted-foreground mt-1">{smallFileSize(file.length)}</Text>
+                <Text className="text-xs text-muted-foreground mt-1">{smallFileSize(file.originalSize)}</Text>
             </View>
-            <Pressable 
-                className="ml-2 p-1 active:bg-blue-800/15 rounded hover:bg-blue-900/10"
-                onPress={() => {
-                    const newFileData = fileData.filter((_, i) => i !== index);
-                    const newTotalBytes = totalBytes - file.length;
-                    const newHasFiles = newFileData.length > 0;
-                    
-                    setFileData(newFileData);
-                    setTotalBytes(newTotalBytes);
-                    setHasFiles(newHasFiles);
-                    
-                    console.log('Removed file, remaining:', newFileData.length);
-                }}
-            >
-                <Ionicons name="close" size={16} color={isDarkColorScheme ? "#9ca3af" : "#6b7280"} />
-            </Pressable>
+            {file.type === 'link' ? (
+                <Pressable
+                    className="ml-2 p-1 active:bg-blue-800/15 rounded hover:bg-blue-900/10"
+                    onPress={() => handleOpenLink(file)}
+                >
+                    <Ionicons name="open-outline" size={18} color={isDarkColorScheme ? "#9ca3af" : "#6b7280"} />
+                </Pressable>
+            ) : (
+                <Pressable
+                    className="ml-2 p-1 active:bg-blue-800/15 rounded hover:bg-blue-900/10"
+                    onPress={() => handleDownload(file)}
+                >
+                    <Ionicons name="download" size={18} color={isDarkColorScheme ? "#9ca3af" : "#6b7280"} />
+                </Pressable>
+            )}
         </Animated.View>
     ));
     
-    const handleFileSelect = async () => {
-        if (true) {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.multiple = true;
-            input.accept = '*/*';
-            
-            input.onchange = async (event: Event) => {
-                const target = event.target as HTMLInputElement;
-                const files = target.files;
-                if (files && files.length > 0) {
-                    const newFiles: Content[] = [];
-                    let newBytes = totalBytes;
-                    let limitExceeded = false;
-                    
-                    for (const file of Array.from(files)) {
-                        // Check if file with same name already exists
-                        const isDuplicate = fileData.some(existingFile => existingFile.name === file.name);
-                        
-                        if (isDuplicate) {
-                            console.log('Skipping duplicate file:', file.name);
-                            continue;
-                        }
-                        
-                        const arrayBuffer = await file.arrayBuffer();
-                        const byteArray = new Uint8Array(arrayBuffer);
-                        
-                        newBytes += file.size;
-                        
-                        if (newBytes > (1024 * 1024 * 1024)) { // 1GB limit
-                            alert("Please keep data uploads below 1GB.");
-                            limitExceeded = true;
-                            break;
-                        }
-                        
-                        newFiles.push({
-                            name: file.name,
-                            type: "file",
-                            buffer: byteArray,
-                            length: file.size
-                        });
-                        
-                        console.log('Selected file:', file.name, file.size, file.type);
-                    }
-                    
-                    // Only update state if no limit was exceeded and we have new files
-                    if (!limitExceeded && newFiles.length > 0) {
-                        setFileData(prevData => [...prevData, ...newFiles]);
-                        setTotalBytes(newBytes);
-                        setHasFiles(true);
-                    }
-                }
-            };
-            
-            input.click();
-        } else {
-            console.log("File selection is not supported on this platform.");
-        }
-    };
-
-    const handleTextLinkInput = (type: 'link' | 'text') => {
-        setInputType(type);
-        
-        // Animate transition: fade out files/buttons, collapse button container, expand window, fade in text input
-        fileContentOpacity.value = withTiming(0, { duration: 400 });
-        buttonsOpacity.value = withTiming(0, { duration: 400 });
-        buttonsHeight.value = withTiming(0, { duration: 400 });
-        
-        setTimeout(() => {
-            setShowTextInput(true);
-            windowHeight.value = withTiming(
-                Platform.OS !== 'web' 
-                    ? (type === 'link' ? 280 : 300) 
-                    : (type === 'link' ? 320 : 360), 
-                { duration: 400 }); // Different heights for web vs mobile
-            textInputOpacity.value = withTiming(1, { duration: 400 });
-        }, 400);
-        
-        setInputValue('');
-        setInputTitle('');
-    };
-
-    const handleAddTextLink = () => {
-        if (!inputValue.trim() || !inputTitle.trim()) return;
-        
-        const content = inputValue.trim();
-        const title = inputTitle.trim();
-        const contentBytes = new TextEncoder().encode(content);
-        
-        // Check size limit
-        const newBytes = totalBytes + contentBytes.length;
-        if (newBytes > (1024 * 1024 * 1024)) {
-            alert("Please keep data uploads below 1GB.");
-            return;
-        }
-        
-        // Check for duplicates
-        const isDuplicate = fileData.some(existingFile => existingFile.name === title);
-        if (isDuplicate) {
-            console.log('Skipping duplicate:', title);
-            return;
-        }
-        
-        const newContent: Content = {
-            name: title,
-            type: inputType,
-            buffer: contentBytes,
-            length: contentBytes.length
-        };
-        
-        setFileData(prevData => [...prevData, newContent]);
-        setTotalBytes(newBytes);
-        setHasFiles(true);
-        
-        // Animate back: fade out text input, shrink window, expand button container, fade in files/buttons
-        textInputOpacity.value = withTiming(0, { duration: 400 });
-        windowHeight.value = withTiming(192, { duration: 400 });
-        
-        setTimeout(() => {
-            setShowTextInput(false);
-            fileContentOpacity.value = withTiming(1, { duration: 400 });
-            buttonsOpacity.value = withTiming(1, { duration: 400 });
-            buttonsHeight.value = withTiming(100, { duration: 400 });
-        }, 400);
-        
-        setInputValue('');
-        setInputTitle('');
-        
-        console.log(`Added ${inputType}:`, title, contentBytes.length, 'bytes');
-    };
+    
+   
 
     const handleCancelTextLink = () => {
         // Animate back: fade out text input, shrink window, expand button container, fade in files/buttons
@@ -453,19 +355,14 @@ export default function FileSelect({ secret }: OpenFileViewProps) {
 
     return (
         <WrapperComponent {...wrapperProps}>
-            <View className="px-6 pb-3">
-                <Text className="text-lg font-semibold text-foreground">Step 1: Add Content</Text>
-                <Text className="text-sm text-muted-foreground mt-1">Select components to add to your secret.</Text>
-            </View>
-            
-            <View className="flex-1 px-6">
+            <View className="flex-1 px-6 pb-6">{/* pb-6 for card padding consistency */}
                 <Animated.View 
-                    style={[windowStyle]} 
-                    className="rounded-lg border border-border overflow-hidden relative"
+                    style={[windowStyle, { flex: 1 }]} 
+                    className="flex-1 rounded-lg border border-border overflow-hidden relative"
                 >
                     {/* File content - always rendered but animated opacity */}
-                    <Animated.View style={[fileContentStyle]} className="absolute inset-0">
-                        <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1 }}>
+                    <Animated.View style={[fileContentStyle, { flex: 1 }]} className="flex-1 absolute inset-0">
+                        <ScrollView showsVerticalScrollIndicator={true} contentContainerStyle={{ flexGrow: 1, minHeight: '100%' }}>
                             {!hasFiles && (
                                 <View className="flex-1 justify-center items-center">
                                     <Text className="text-base italic text-center" style={{opacity: 0.5}}>
@@ -476,11 +373,8 @@ export default function FileSelect({ secret }: OpenFileViewProps) {
                             {displayedFiles}
                         </ScrollView>
                     </Animated.View>
-
                 </Animated.View>
             </View>
-
-           
         </WrapperComponent>
     )
 }

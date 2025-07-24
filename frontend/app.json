@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "secret4",
-    "slug": "secret4",
+    "name": "Secret",
+    "slug": "Secret",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./icons/web/icon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -29,7 +29,7 @@
     "web": {
       "bundler": "metro",
       "output": "single",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./icons/web/icon.png"
     },
     "plugins": [
       "expo-router"

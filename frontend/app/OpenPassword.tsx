@@ -58,17 +58,18 @@ export default function OpenPassword({ hash, callback }: { hash: string, callbac
             <View className="flex-1 px-6 pb-6">
                 <View className="flex-1 rounded-lg border border-border bg-card p-6 gap-4 items-center justify-center">
                     <View className="w-full max-w-xs">
-                <Text className="text-base text-muted-foreground mb-1">Password</Text>
-                <View className="border border-border rounded-lg p-2 w-full">
+                <Text className="text-sm text-muted-foreground mb-1">Password</Text>
                     <TextInput
                         secureTextEntry
                         value={password}
                         onChangeText={setPassword}
-                        placeholder="Enter password"
-                        className="text-base text-foreground"
-                        style={{ width: '100%' }}
+                        placeholder="Enter password..."
+                        className="border border-border rounded-lg p-3 text-foreground bg-card"
+                        placeholderTextColor={isDarkColorScheme ? "#6b7280" : "#9ca3af"}
+                            
+                        style={{ fontSize: 16 }}
                     />
-                </View>
+                
             </View>
             <Pressable
                 className="mt-4 px-4 py-2 bg-primary rounded-lg"
